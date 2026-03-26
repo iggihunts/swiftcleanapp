@@ -1,9 +1,11 @@
 node_modules/
 dist/
 bin/
-assets/icon-*.png
 assets/icon.iconset/
 assets/icon.icns
 assets/dmg-background.png
 .DS_Store
 *.log
+
+# Source icons are committed
+!assets/icon-source-*.png

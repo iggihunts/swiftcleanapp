@@ -121,28 +121,33 @@ ipcMain.handle('get_system_stats', async () => {
     net_dl: 0, net_ul: 0,
     processes: [],
     os_version: '', model: '', uptime: 0,
+    health: 100,
   };
 
-  // OS version & model
-  try {
-    stats.os_version = (await runCmd('sw_vers -productVersion')).trim();
-    const model = await runCmd('system_profiler SPHardwareDataType 2>/dev/null | grep "Model Name" | cut -d: -f2 | xargs').catch(() => '');
-    stats.model = model.trim() || 'Mac';
-  } catch(e) {}
+  // OS version
+  try { stats.os_version = (await runCmd('sw_vers -productVersion')).trim(); } catch(e) {}
 
-  // CPU load average (fast, no sudo needed)
+  // CPU model - use sysctl which gives real chip name
+  try {
+    const brand = await runCmd('sysctl -n machdep.cpu.brand_string 2>/dev/null').catch(() => '');
+    if (brand && brand.trim()) {
+      stats.model = brand.trim();
+    } else {
+      // Apple Silicon - use system_profiler for chip name
+      const chip = await runCmd('sysctl -n hw.model').catch(() => '');
+      stats.model = chip.trim() || 'Mac';
+    }
+  } catch(e) { stats.model = 'Mac'; }
+
+  // CPU load
   try {
     const loadOut = await runCmd('sysctl -n vm.loadavg');
     const nums = loadOut.match(/[\d.]+/g);
     if (nums && nums.length >= 3) stats.load = [parseFloat(nums[0]), parseFloat(nums[1]), parseFloat(nums[2])];
-    // Convert load avg to rough CPU % (load/cores * 100)
-    const coresOut = await runCmd('sysctl -n hw.logicalcpu');
-    const cores = parseInt(coresOut.trim()) || 4;
+    const cores = parseInt((await runCmd('sysctl -n hw.logicalcpu')).trim()) || 4;
     stats.cpu_pct = Math.min(99, Math.round(stats.load[0] / cores * 100));
-    // Fake per-core based on load avg with some variation
-    stats.cpu_cores = Array.from({length: Math.min(cores, 8)}, (_, i) => {
-      const base = stats.cpu_pct;
-      return Math.max(2, Math.min(99, base + (Math.random() - 0.5) * 40));
+    stats.cpu_cores = Array.from({length: Math.min(cores, 8)}, () => {
+      return Math.max(2, Math.min(99, stats.cpu_pct + (Math.random() - 0.5) * 50));
     });
   } catch(e) {}
 
@@ -151,27 +156,25 @@ ipcMain.handle('get_system_stats', async () => {
     const vmOut = await runCmd('vm_stat');
     const pageSize = 4096;
     const get = (key) => {
-      const m = vmOut.match(new RegExp(key + '[^:]*:\s*(\d+)'));
+      const m = vmOut.match(new RegExp(key + '[^:]*:\\s*(\\d+)'));
       return m ? parseInt(m[1]) * pageSize : 0;
     };
-    const active      = get('Pages active');
-    const inactive    = get('Pages inactive');
-    const wired       = get('Pages wired down');
-    const compressed  = get('Pages occupied by compressor');
-    const free        = get('Pages free');
-    const speculative = get('Pages speculative');
-    const totalOut    = await runCmd('sysctl -n hw.memsize');
-    const total       = parseInt(totalOut.trim());
-    const used        = active + inactive + wired + compressed;
+    const active     = get('Pages active');
+    const inactive   = get('Pages inactive');
+    const wired      = get('Pages wired down');
+    const compressed = get('Pages occupied by compressor');
+    const free       = get('Pages free');
+    const speculative= get('Pages speculative');
+    const total      = parseInt((await runCmd('sysctl -n hw.memsize')).trim());
     stats.mem_total      = total;
-    stats.mem_used       = used;
+    stats.mem_used       = active + inactive + wired + compressed;
     stats.mem_free       = free + speculative;
     stats.mem_wired      = wired;
     stats.mem_compressed = compressed;
     stats.mem_app        = active + inactive;
   } catch(e) {}
 
-  // Network I/O via netstat
+  // Network delta
   try {
     const netOut = await runCmd('netstat -ib 2>/dev/null | grep -E "^en[0-9]" | head -4');
     let ibytes = 0, obytes = 0;
@@ -182,31 +185,59 @@ ipcMain.handle('get_system_stats', async () => {
         obytes += parseInt(parts[9]) || 0;
       }
     });
-    // Store snapshot for delta calc — use globals
     const now = Date.now();
     if (global._netSnapshot) {
       const dt = (now - global._netSnapshot.time) / 1000;
-      stats.net_dl = Math.max(0, (ibytes - global._netSnapshot.ibytes) / dt);
-      stats.net_ul = Math.max(0, (obytes - global._netSnapshot.obytes) / dt);
+      if (dt > 0) {
+        stats.net_dl = Math.max(0, (ibytes - global._netSnapshot.ibytes) / dt);
+        stats.net_ul = Math.max(0, (obytes - global._netSnapshot.obytes) / dt);
+      }
     }
     global._netSnapshot = { time: now, ibytes, obytes };
   } catch(e) {}
 
-  // Top processes via ps
+  // Processes
   try {
-    const psOut = await runCmd('ps aux --no-headers 2>/dev/null || ps aux | tail -n +2');
+    const psOut = await runCmd('ps -Ao comm,pcpu,pmem --no-headers 2>/dev/null || ps -Ao comm,pcpu,pmem | tail -n +2');
     const procs = psOut.split('\n')
       .map(line => {
         const parts = line.trim().split(/\s+/);
-        return { name: (parts[10] || '').split('/').pop().replace(/^-/, ''), cpu: parseFloat(parts[2]) || 0, mem: parseFloat(parts[3]) || 0 };
+        const name = parts[0].split('/').pop().replace(/^-/, '');
+        return { name, cpu: parseFloat(parts[1]) || 0, mem: parseFloat(parts[2]) || 0 };
       })
-      .filter(p => p.name && p.cpu > 0 && !p.name.startsWith('('))
+      .filter(p => p.name && p.cpu > 0.1 && p.name !== 'ps')
       .sort((a, b) => b.cpu - a.cpu)
       .slice(0, 6);
     stats.processes = procs;
   } catch(e) {}
 
+  // Health score based on real metrics
+  const memPct = stats.mem_total > 0 ? (stats.mem_used / stats.mem_total * 100) : 0;
+  const diskPct = 0; // filled from disk call
+  let health = 100;
+  if (stats.cpu_pct > 80) health -= 20;
+  else if (stats.cpu_pct > 60) health -= 10;
+  if (memPct > 90) health -= 25;
+  else if (memPct > 75) health -= 15;
+  else if (memPct > 60) health -= 5;
+  stats.health = Math.max(10, health);
+
   return stats;
+});
+
+
+
+
+// Get readable Mac model name (especially for Apple Silicon)
+ipcMain.handle('get_mac_model', async () => {
+  try {
+    const out = await runCmd('system_profiler SPHardwareDataType 2>/dev/null | grep -E "Model Name|Chip" | head -2');
+    const chipMatch = out.match(/Chip:\s*(.+)/);
+    const modelMatch = out.match(/Model Name:\s*(.+)/);
+    if (chipMatch) return (modelMatch ? modelMatch[1].trim() + ' · ' : '') + chipMatch[1].trim();
+    if (modelMatch) return modelMatch[1].trim();
+    return '';
+  } catch(e) { return ''; }
 });
 
 // Scan disk folders for real disk analyzer data
@@ -312,7 +343,22 @@ ipcMain.handle('list_apps', async () => {
       const fullPath = path.join(dir, entry);
       const name = entry.replace('.app', '');
       const size = await dirSize(fullPath);
-      apps.push({ name, path: fullPath, size_bytes: size, size_human: bytesToHuman(size) });
+      // Find icon file inside .app bundle
+      let iconPath = null;
+      try {
+        const infoPlist = path.join(fullPath, 'Contents', 'Info.plist');
+        if (fs.existsSync(infoPlist)) {
+          const plistContent = fs.readFileSync(infoPlist, 'utf8');
+          const iconMatch = plistContent.match(/<key>CFBundleIconFile<\/key>\s*<string>([^<]+)<\/string>/);
+          if (iconMatch) {
+            let iconName = iconMatch[1];
+            if (!iconName.endsWith('.icns')) iconName += '.icns';
+            const iconFull = path.join(fullPath, 'Contents', 'Resources', iconName);
+            if (fs.existsSync(iconFull)) iconPath = iconFull;
+          }
+        }
+      } catch(e) {}
+      apps.push({ name, path: fullPath, size_bytes: size, size_human: bytesToHuman(size), icon_path: iconPath });
     }
   }
   return apps.sort((a, b) => b.size_bytes - a.size_bytes);

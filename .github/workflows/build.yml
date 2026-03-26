@@ -46,61 +46,30 @@ jobs:
           echo "Staged binaries:"
           ls -lh bin/
 
-      - name: Generate app icons
+      - name: Build app icons from source
         run: |
-          mkdir -p assets
-
-          python3 - << 'PYEOF'
-          import struct, zlib, os
-
-          def make_png(size, bg=(20,20,24,255), fg=(124,109,250,255)):
-              def chunk(t, d):
-                  c = zlib.crc32(t+d) & 0xffffffff
-                  return struct.pack('>I', len(d)) + t + d + struct.pack('>I', c)
-              rows = []
-              mid = size // 2
-              r   = size // 3
-              for y in range(size):
-                  row = b'\x00'
-                  for x in range(size):
-                      dist = ((x-mid)**2 + (y-mid)**2) ** 0.5
-                      row += bytes(fg if dist < r else bg)
-                  rows.append(row)
-              raw = b''.join(rows)
-              return (b'\x89PNG\r\n\x1a\n'
-                  + chunk(b'IHDR', struct.pack('>IIBBBBB', size, size, 8, 6, 0, 0, 0))
-                  + chunk(b'IDAT', zlib.compress(raw))
-                  + chunk(b'IEND', b''))
-
-          for sz in [16, 32, 64, 128, 256, 512, 1024]:
-              with open(f'assets/icon-{sz}.png', 'wb') as f:
-                  f.write(make_png(sz))
-
-          # DMG background (simple dark gradient placeholder)
-          with open('assets/dmg-background.png', 'wb') as f:
-              f.write(make_png(660, bg=(13,13,16,255), fg=(13,13,16,255)))
-
-          print("Icons generated")
-          PYEOF
-
+          # Use committed source icons to build iconset
           ICONSET=assets/icon.iconset
           mkdir -p "$ICONSET"
 
           for sz in 16 32 64 128 256 512; do
-            sips -z $sz $sz assets/icon-${sz}.png \
-              --out "$ICONSET/icon_${sz}x${sz}.png" 2>/dev/null || \
-            cp assets/icon-${sz}.png "$ICONSET/icon_${sz}x${sz}.png"
+            src="assets/icon-source-${sz}.png"
+            [ ! -f "$src" ] && src="assets/icon-source-1024.png"
+            sips -z $sz $sz "$src" --out "$ICONSET/icon_${sz}x${sz}.png" 2>/dev/null || cp "$src" "$ICONSET/icon_${sz}x${sz}.png"
             dbl=$((sz*2))
             if [ $dbl -le 1024 ]; then
-              sips -z $dbl $dbl assets/icon-1024.png \
-                --out "$ICONSET/icon_${sz}x${sz}@2x.png" 2>/dev/null || true
+              src2="assets/icon-source-${dbl}.png"
+              [ ! -f "$src2" ] && src2="assets/icon-source-1024.png"
+              sips -z $dbl $dbl "$src2" --out "$ICONSET/icon_${sz}x${sz}@2x.png" 2>/dev/null || true
             fi
           done
-          sips -z 1024 1024 assets/icon-1024.png \
-            --out "$ICONSET/icon_512x512@2x.png" 2>/dev/null || true
+          sips -z 1024 1024 assets/icon-source-1024.png --out "$ICONSET/icon_512x512@2x.png" 2>/dev/null || true
 
           iconutil -c icns "$ICONSET" -o assets/icon.icns
-          echo "icon.icns created: $(ls -lh assets/icon.icns)"
+          echo "icon.icns: $(ls -lh assets/icon.icns)"
+
+          # Copy source icon for direct use
+          cp assets/icon-source-256.png assets/icon-256.png
 
       - name: Build DMG
         run: npm run build

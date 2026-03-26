@@ -650,41 +650,74 @@ html, body {
 <div class="sidebar">
   <div class="nav-section">Overview</div>
   <div class="nav-item active" data-view="dashboard">
-    <div class="nav-icon">⬡</div>
+    <div class="nav-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+    </div>
     <span class="nav-label">Dashboard</span>
   </div>
   <div class="nav-item" data-view="status">
-    <div class="nav-icon">◈</div>
+    <div class="nav-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+    </div>
     <span class="nav-label">System</span>
   </div>
 
   <div class="nav-section">Clean</div>
   <div class="nav-item" data-view="clean">
-    <div class="nav-icon">✦</div>
+    <div class="nav-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+      </svg>
+    </div>
     <span class="nav-label">Deep Clean</span>
     <span class="nav-badge" id="junk-badge">!</span>
   </div>
   <div class="nav-item" data-view="malware">
-    <div class="nav-icon">🛡</div>
+    <div class="nav-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    </div>
     <span class="nav-label">Malware</span>
     <span class="nav-new">NEW</span>
   </div>
   <div class="nav-item" data-view="uninstall">
-    <div class="nav-icon">⊘</div>
+    <div class="nav-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>
+      </svg>
+    </div>
     <span class="nav-label">Uninstaller</span>
   </div>
   <div class="nav-item" data-view="optimize">
-    <div class="nav-icon">⚡</div>
+    <div class="nav-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+    </div>
     <span class="nav-label">Optimize</span>
   </div>
   <div class="nav-item" data-view="purge">
-    <div class="nav-icon">⌫</div>
+    <div class="nav-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    </div>
     <span class="nav-label">Purge</span>
   </div>
 
   <div class="nav-section">Analyze</div>
   <div class="nav-item" data-view="disk">
-    <div class="nav-icon">◉</div>
+    <div class="nav-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+      </svg>
+    </div>
     <span class="nav-label">Disk</span>
   </div>
 
@@ -692,7 +725,7 @@ html, body {
     <div class="health-widget">
       <div class="health-top">
         <span class="health-label">System Health</span>
-        <span class="health-score">92</span>
+        <span class="health-score" id="health-score">92</span>
       </div>
       <div class="health-bar"><div class="health-fill"></div></div>
     </div>
@@ -706,7 +739,7 @@ html, body {
 <div class="view active" id="view-dashboard">
   <div class="page-header">
     <div>
-      <div class="page-title">Good morning 👋</div>
+      <div class="page-title" id="greeting">Good morning 👋</div>
       <div class="page-sub" id="sys-sub">Loading system info…</div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
@@ -779,24 +812,24 @@ html, body {
       <div class="card col-span-2">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <span style="font-size:12px;font-weight:600;color:var(--text2)">Memory</span>
-          <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--amber)">58%</span>
+          <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--amber)" id="mem-pct-dash">—%</span>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--text2)">App Memory</span><span>8.4 GB</span></div>
-            <div class="bar-track"><div class="bar-fill" style="width:70%;background:var(--amber)"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--text2)">App Memory</span><span id="mem-app-val">—</span></div>
+            <div class="bar-track"><div class="bar-fill" id="mem-app-bar" style="width:0%;background:var(--amber)"></div></div>
           </div>
           <div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--text2)">Wired</span><span>3.8 GB</span></div>
-            <div class="bar-track"><div class="bar-fill" style="width:32%;background:var(--red)"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--text2)">Wired</span><span id="mem-wired-val">—</span></div>
+            <div class="bar-track"><div class="bar-fill" id="mem-wired-bar" style="width:0%;background:var(--red)"></div></div>
           </div>
           <div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--text2)">Compressed</span><span>2.0 GB</span></div>
-            <div class="bar-track"><div class="bar-fill" style="width:17%;background:var(--purple)"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--text2)">Compressed</span><span id="mem-comp-val">—</span></div>
+            <div class="bar-track"><div class="bar-fill" id="mem-comp-bar" style="width:0%;background:var(--purple)"></div></div>
           </div>
           <div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--text2)">Free</span><span>17.8 GB</span></div>
-            <div class="bar-track"><div class="bar-fill" style="width:55%;background:var(--green)"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--text2)">Free</span><span id="mem-free-val">—</span></div>
+            <div class="bar-track"><div class="bar-fill" id="mem-free-bar" style="width:0%;background:var(--green)"></div></div>
           </div>
         </div>
       </div>
@@ -1068,7 +1101,7 @@ html, body {
       <div class="card">
         <div style="display:flex;justify-content:space-between;margin-bottom:12px">
           <span style="font-size:12px;font-weight:600;color:var(--text2)">▦ Memory</span>
-          <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--amber)">58%</span>
+          <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--amber)" id="mem-pct-dash">—%</span>
         </div>
         <div class="stat-row"><span class="stat-name">Used</span><div class="stat-bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:58%;background:var(--amber)"></div></div></div><span class="stat-val">14.2 GB</span></div>
         <div class="stat-row"><span class="stat-name">Free</span><div class="stat-bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:42%;background:var(--green)"></div></div></div><span class="stat-val">17.8 GB</span></div>
@@ -1268,8 +1301,35 @@ async function loadSystemStats() {
     const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
     const setW = (id,w) => { const el=document.getElementById(id); if(el) el.style.width=w+'%'; };
 
-    // System subtitle
-    set('sys-sub', `${s.model} · ${(s.mem_total/GB).toFixed(0)} GB RAM · macOS ${s.os_version}`);
+    // Dynamic greeting based on time
+    const hr = new Date().getHours();
+    const greet = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+    const greetEl = document.getElementById('greeting');
+    if (greetEl) greetEl.textContent = greet + ' 👋';
+
+    // System subtitle - real model
+    let modelDisplay = s.model;
+    // For Apple Silicon, sysctl hw.model returns e.g. "Mac14,5" - get readable name
+    if (modelDisplay.match(/^Mac\d/)) {
+      try {
+        const sp = await invoke('get_mac_model');
+        if (sp) modelDisplay = sp;
+      } catch(e) {}
+    }
+    set('sys-sub', `${modelDisplay} · ${(s.mem_total/GB).toFixed(0)} GB · macOS ${s.os_version}`);
+
+    // Health score
+    const healthEl = document.getElementById('health-score');
+    if (healthEl) healthEl.textContent = s.health;
+    const healthFill = document.querySelector('.health-fill');
+    if (healthFill) {
+      healthFill.style.width = s.health + '%';
+      healthFill.style.background = s.health > 80
+        ? 'linear-gradient(90deg,var(--green),var(--cyan))'
+        : s.health > 60
+        ? 'linear-gradient(90deg,var(--amber),var(--green))'
+        : 'linear-gradient(90deg,var(--red),var(--amber))';
+    }
 
     // CPU %
     set('cpu-pct', s.cpu_pct+'%');
@@ -1280,40 +1340,17 @@ async function loadSystemStats() {
       if (s.cpu_cores[i] !== undefined) el.style.height = Math.max(4,s.cpu_cores[i])+'%';
     });
 
-    // Memory % header (dashboard card)
-    document.querySelectorAll('#view-dashboard .card').forEach(card => {
-      const hdr = card.querySelector('[style*="var(--amber)"]');
-      if (hdr && hdr.textContent.includes('%')) hdr.textContent = memPct+'%';
-    });
-
-    // Memory bars (dashboard)
-    const memPcts = [
-      s.mem_app/s.mem_total*100,
-      s.mem_wired/s.mem_total*100,
-      s.mem_compressed/s.mem_total*100,
-      s.mem_free/s.mem_total*100,
-    ];
-    const memVals = [
-      fmt(s.mem_app), fmt(s.mem_wired), fmt(s.mem_compressed), fmt(s.mem_free)
-    ];
-    let barIdx = 0;
-    document.querySelectorAll('#view-dashboard .card').forEach(card => {
-      // Find the memory card (has 4 bar-track elements)
-      const bars = card.querySelectorAll('.bar-track');
-      if (bars.length === 4) {
-        bars.forEach((bar, i) => {
-          const fill = bar.querySelector('.bar-fill');
-          if (fill) fill.style.width = Math.min(100, memPcts[i]).toFixed(0)+'%';
-          // Update the value label (span with text GB)
-          const row = bar.parentElement?.parentElement;
-          if (row) {
-            const spans = row.querySelectorAll('span');
-            spans.forEach(sp => { if (sp.textContent.includes('GB') && !sp.textContent.includes('Memory')) sp.textContent = memVals[i]; });
-          }
-        });
-      }
-    });
-
+    // Memory — using explicit IDs
+    const memPct = s.mem_total > 0 ? Math.round(s.mem_used/s.mem_total*100) : 0;
+    set('mem-pct-dash', memPct+'%');
+    set('mem-app-val',   fmt(s.mem_app));
+    set('mem-wired-val', fmt(s.mem_wired));
+    set('mem-comp-val',  fmt(s.mem_compressed));
+    set('mem-free-val',  fmt(s.mem_free));
+    setW('mem-app-bar',   Math.min(100, s.mem_total>0 ? s.mem_app/s.mem_total*100 : 0));
+    setW('mem-wired-bar', Math.min(100, s.mem_total>0 ? s.mem_wired/s.mem_total*100 : 0));
+    setW('mem-comp-bar',  Math.min(100, s.mem_total>0 ? s.mem_compressed/s.mem_total*100 : 0));
+    setW('mem-free-bar',  Math.min(100, s.mem_total>0 ? s.mem_free/s.mem_total*100 : 0));
     // Status view memory
     set('st-mem-used', fmt(s.mem_used));
     set('st-mem-free', fmt(s.mem_free));
@@ -1360,8 +1397,22 @@ async function loadDiskStats() { await loadSystemStats(); }
 
 // ── Malware DB ─────────────────────────────────────────────────────────────────
 function isDbStale(str) {
-  if (!str || str === 'Unknown' || str === 'N/A') return false;
-  try { const d = new Date(str); return !isNaN(d) && (Date.now()-d)/3600000 > 24; } catch { return false; }
+  if (!str || str === 'Unknown' || str === 'N/A' || str === '—') return false;
+  try {
+    // ClamAV format: "Wed Mar 25 01:24:10 2026" or similar
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      const hoursSince = (Date.now() - d.getTime()) / 3600000;
+      return hoursSince > 72; // stale after 3 days (ClamAV updates ~daily)
+    }
+    // Try extracting year - if current year present, not stale
+    const yearMatch = str.match(/20\d{2}/);
+    if (yearMatch) {
+      const year = parseInt(yearMatch[0]);
+      return year < new Date().getFullYear();
+    }
+    return false;
+  } catch { return false; }
 }
 
 async function loadDbInfo() {
@@ -1572,18 +1623,25 @@ window.startJunkScan = async function() {
 };
 
 window.cleanAll = async function() {
-  const paths = junkItems.map(i=>i.path);
-  if (!paths.length) return;
+  const paths = junkItems.map(i => i.path);
+  if (!paths.length) { alert('Run a scan first'); return; }
   showModal('🧹', 'Cleaning Junk Files');
+  appendLine(`<span class="t-dim">Cleaning ${paths.length} categories…</span>`);
   for (const item of junkItems) {
     appendLine(`<span class="t-acc">→ ${item.name}</span>`);
-    appendLine(`  <span class="t-dim">Removing ${item.path}</span>`);
+    appendLine(`  <span class="t-dim">${item.path}</span>`);
   }
-  const freed = await invoke('clean_junk', { paths });
-  appendLine(`<span class="t-dim">────────────────────────────</span>`);
-  appendLine(`<span class="t-ok">✓ Freed <span class="t-sz">${freed}</span></span>`);
+  try {
+    const freed = await invoke('clean_junk', { paths });
+    appendLine('<span class="t-dim">────────────────────</span>');
+    appendLine(`<span class="t-ok">✓ Freed <span class="t-sz">${freed}</span></span>`);
+    const badge = document.getElementById('junk-badge');
+    if (badge) badge.style.display = 'none';
+    junkItems = [];
+  } catch(e) {
+    appendLine(`<span style="color:var(--red)">✗ Error: ${e.message || e}</span>`);
+  }
 };
-
 // ── Apps ───────────────────────────────────────────────────────────────────────
 let apps = [], appChecked = new Set();
 async function loadApps() {
@@ -1591,16 +1649,21 @@ async function loadApps() {
 }
 function renderApps() {
   const GB = 1073741824;
-  document.getElementById('appList').innerHTML = apps.map((a,i) => `
+  document.getElementById('appList').innerHTML = apps.map((a,i) => {
+    const iconEl = a.icon_path
+      ? `<img src="file://${a.icon_path}" style="width:30px;height:30px;object-fit:contain;border-radius:6px" onerror="this.outerHTML='<span style=font-size:22px>📱</span>'">`
+      : `<span style="font-size:22px">📱</span>`;
+    return `
     <div class="app-row ${appChecked.has(i)?'checked':''}" onclick="toggleApp(${i})">
       <div class="app-ck">${appChecked.has(i)?'✓':''}</div>
-      <div class="app-icon-wrap">📱</div>
+      <div class="app-icon-wrap" style="background:transparent;border:none">${iconEl}</div>
       <div style="flex:1">
         <div class="app-name">${a.name}</div>
         <div class="app-meta"><span>${a.path}</span></div>
       </div>
       <div class="app-size">${a.size_human}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   const sel = [...appChecked];
   const total = sel.reduce((acc,i) => acc+apps[i].size_bytes, 0);
   document.getElementById('uninstall-summary').innerHTML = sel.length
@@ -1625,30 +1688,48 @@ window.doUninstall = async function() {
 
 // ── Optimize ───────────────────────────────────────────────────────────────────
 const optTasks = [
-  { id:'flush_dns',              icon:'🌐', title:'Flush DNS Cache',        cmd:'dscacheutil -flushcache' },
-  { id:'rebuild_launch_services',icon:'🚀', title:'Rebuild Launch Services', cmd:'lsregister reset' },
-  { id:'restart_finder',         icon:'🖥', title:'Restart Finder',          cmd:'killall Finder' },
-  { id:'restart_dock',           icon:'⚓', title:'Restart Dock',            cmd:'killall Dock' },
-  { id:'purge_memory',           icon:'🧠', title:'Purge Memory',            cmd:'purge' },
-  { id:'clear_font_cache',       icon:'🔤', title:'Clear Font Cache',        cmd:'atsutil databases -remove' },
+  { id:'flush_dns',              title:'Flush DNS Cache',        cmd:'dscacheutil -flushcache',    desc:'Clear DNS resolver cache' },
+  { id:'rebuild_launch_services',title:'Rebuild Launch Services', cmd:'lsregister reset',           desc:'Fix app associations' },
+  { id:'restart_finder',         title:'Restart Finder',          cmd:'killall Finder',             desc:'Relaunch Finder process' },
+  { id:'restart_dock',           title:'Restart Dock',            cmd:'killall Dock',               desc:'Relaunch Dock process' },
+  { id:'purge_memory',           title:'Purge Memory',            cmd:'purge',                      desc:'Free inactive memory' },
+  { id:'clear_font_cache',       title:'Clear Font Cache',        cmd:'atsutil databases -remove',  desc:'Fix font rendering issues' },
 ];
-document.getElementById('opt-grid').innerHTML = optTasks.map((t,i) => `
-  <div class="opt-card">
-    <div class="opt-icon">${t.icon}</div>
-    <div class="opt-info">
-      <div class="opt-title">${t.title}</div>
-      <div class="opt-cmd">${t.cmd}</div>
-    </div>
-    <button class="btn btn-ghost btn-sm" id="opt-btn-${i}" onclick="runOpt(${i})">Run</button>
-  </div>`).join('');
+const optSVGs = {
+  flush_dns: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/></svg>',
+  rebuild_launch_services: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.31"/></svg>',
+  restart_finder: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>',
+  restart_dock: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="17" width="20" height="5" rx="2"/><rect x="6" y="3" width="12" height="12" rx="2"/></svg>',
+  purge_memory: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="7" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="17" cy="12" r="1" fill="currentColor"/></svg>',
+  clear_font_cache: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>',
+};
+
+function renderOptimize() {
+  document.getElementById('opt-grid').innerHTML = optTasks.map((t,i) => `
+    <div class="opt-card">
+      <div class="opt-icon" style="color:var(--blue)">${optSVGs[t.id] || ''}</div>
+      <div class="opt-info">
+        <div class="opt-title">${t.title}</div>
+        <div class="opt-cmd">${t.desc}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="opt-btn-${i}" onclick="runOpt(${i})">Run</button>
+    </div>`).join('');
+}
+renderOptimize();
 
 window.runOpt = async function(i) {
   const btn = document.getElementById(`opt-btn-${i}`);
-  btn.textContent = '…'; btn.disabled = true;
+  btn.textContent = '…'; btn.disabled = true; btn.style.color = '';
   try {
     await invoke('run_optimization', { task: optTasks[i].id });
-    btn.textContent = '✓'; btn.style.color = 'var(--green)';
-  } catch { btn.textContent = '✗'; btn.style.color = 'var(--red)'; btn.disabled = false; }
+    btn.textContent = '✓ Done'; btn.style.color = 'var(--green)';
+  } catch(e) {
+    btn.textContent = '✗ Error'; btn.style.color = 'var(--red)';
+  }
+  // Re-enable after 2 seconds so user can run again
+  setTimeout(() => {
+    btn.textContent = 'Run'; btn.style.color = ''; btn.disabled = false;
+  }, 2000);
 };
 
 // ── Purge ──────────────────────────────────────────────────────────────────────
