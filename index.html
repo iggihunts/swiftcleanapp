@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwiftClean</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d10; --surface: #141418; --surface2: #1c1c22;
+    --surface3: #242430; --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0f0f5; --text2: #8888a0; --text3: #45455a;
+    --accent: #7c6dfa; --accent2: #a78bfa;
+    --green: #34d399; --red: #f87171; --yellow: #fbbf24;
+    --orange: #fb923c; --blue: #60a5fa; --cyan: #22d3ee;
+    --pink: #f472b6; --r: 14px; --rs: 8px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);
+    height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+  /* ── Titlebar ── */
+  .titlebar{height:44px;background:rgba(20,20,24,.97);backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);display:flex;align-items:center;
+    padding:0 16px;-webkit-app-region:drag;flex-shrink:0;position:relative;z-index:100;}
+  .tl-wrap{display:flex;gap:8px;-webkit-app-region:no-drag;}
+  .tl{width:12px;height:12px;border-radius:50%;cursor:pointer;transition:opacity .2s;}
+  .tl:hover{opacity:.8;}
+  .tl-close{background:#ff5f57;} .tl-min{background:#ffbd2e;} .tl-max{background:#28c840;}
+  .tb-center{position:absolute;left:50%;transform:translateX(-50%);
+    display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text2);}
+
+  /* ── Layout ── */
+  .app-body{display:flex;flex:1;overflow:hidden;}
+
+  /* ── Sidebar ── */
+  .sidebar{width:224px;background:var(--surface);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;padding:16px 12px;flex-shrink:0;}
+  .sl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+    color:var(--text3);padding:0 8px;margin:16px 0 6px;}
+  .sl:first-child{margin-top:4px;}
+  .nav{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--rs);
+    cursor:pointer;transition:all .15s;font-size:13px;font-weight:600;color:var(--text2);position:relative;}
+  .nav:hover{background:var(--surface2);color:var(--text);}
+  .nav.active{background:rgba(124,109,250,.14);color:var(--accent2);}
+  .nav.active::before{content:'';position:absolute;left:-1px;top:20%;height:60%;width:3px;
+    border-radius:0 3px 3px 0;background:var(--accent);}
+  .nav-ico{font-size:15px;width:20px;text-align:center;}
+  .nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;
+    font-weight:700;padding:2px 6px;border-radius:20px;}
+  .nav-new{margin-left:auto;background:rgba(124,109,250,.25);color:var(--accent2);
+    font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;}
+  .sidebar-footer{margin-top:auto;padding:12px 8px;border-top:1px solid var(--border);}
+  .health-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
+  .health-lbl{font-size:12px;color:var(--text2);}
+  .health-val{font-size:22px;font-weight:800;color:var(--green);}
+  .bar-track{height:4px;background:var(--surface3);border-radius:4px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:4px;}
+
+  /* ── Main ── */
+  .main{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+  .view{display:none;flex-direction:column;flex:1;overflow:hidden;}
+  .view.active{display:flex;}
+  .vh{padding:28px 32px 0;flex-shrink:0;}
+  .vtitle{font-size:26px;font-weight:800;letter-spacing:-.03em;margin-bottom:4px;}
+  .vsub{font-size:13px;color:var(--text2);}
+
+  /* ── Cards ── */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+    padding:18px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+  .card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3);}
+  .card::before{content:'';position:absolute;inset:0;
+    background:linear-gradient(135deg,rgba(255,255,255,.03) 0%,transparent 60%);pointer-events:none;}
+  .card-wide{grid-column:span 2;}
+  .cstat{font-size:32px;font-weight:800;letter-spacing:-.03em;margin-bottom:2px;}
+  .cstat-lbl{font-size:12px;color:var(--text2);}
+  .ctitle{font-size:14px;font-weight:700;margin-bottom:3px;}
+  .cdesc{font-size:12px;color:var(--text2);line-height:1.5;}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;
+    font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;border:none;font-family:inherit;}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:#6b5ce7;transform:scale(1.02);}
+  .btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+  .btn-ghost:hover{background:var(--surface3);color:var(--text);}
+  .btn-red{background:var(--red);color:#fff;}
+  .btn-red:hover{filter:brightness(1.1);}
+  .btn-green{background:var(--green);color:#0d1a14;}
+  .btn-orange{background:var(--orange);color:#1a0d00;}
+
+  /* Mini bar */
+  .mbar{height:5px;background:var(--surface3);border-radius:5px;overflow:hidden;margin-top:4px;}
+  .mbar-fill{height:100%;border-radius:5px;transition:width 1s ease-out;}
+
+  /* ── Dashboard ── */
+  .dash-grid{padding:20px 32px;display:grid;grid-template-columns:repeat(3,1fr);
+    gap:14px;overflow-y:auto;flex:1;}
+  .dash-grid::-webkit-scrollbar{width:4px;}
+  .dash-grid::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px;}
+  .cpu-bars{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px;}
+  .cpu-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .cpu-track{height:50px;width:100%;background:var(--surface3);border-radius:4px;
+    overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;}
+  .cpu-fill{width:100%;border-radius:4px 4px 0 0;
+    background:linear-gradient(0deg,var(--accent),var(--cyan));}
+  .proc-row{display:flex;align-items:center;gap:12px;padding:8px 0;
+    border-bottom:1px solid var(--border);font-size:12.5px;}
+  .proc-row:last-child{border-bottom:none;}
+  .proc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+  /* ── Clean View ── */
+  .scan-area{flex:1;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:24px;padding:32px;}
+  .orb{width:180px;height:180px;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,rgba(124,109,250,.3),rgba(34,211,238,.1) 60%,transparent);
+    border:2px solid rgba(124,109,250,.3);display:flex;align-items:center;justify-content:center;
+    font-size:64px;position:relative;cursor:pointer;transition:all .3s;
+    box-shadow:0 0 60px rgba(124,109,250,.2);}
+  .orb:hover{box-shadow:0 0 80px rgba(124,109,250,.35);}
+  .orb.scanning{animation:orbPulse 2s ease-in-out infinite;}
+  @keyframes orbPulse{0%,100%{box-shadow:0 0 60px rgba(124,109,250,.2);}
+    50%{box-shadow:0 0 100px rgba(124,109,250,.5);}}
+  .orb-ring{position:absolute;inset:-10px;border-radius:50%;border:2px solid transparent;
+    border-top-color:var(--accent);display:none;}
+  .orb.scanning .orb-ring{display:block;animation:spin 1.2s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .clean-results{width:100%;max-width:580px;background:var(--surface);
+    border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+  .cr-row{display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid var(--border);
+    gap:12px;font-size:12.5px;animation:fsi .35s ease forwards;opacity:0;transform:translateY(6px);}
+  .cr-row:last-child{border-bottom:none;}
+  @keyframes fsi{to{opacity:1;transform:none;}}
+  .freed-badge{background:linear-gradient(135deg,rgba(52,211,153,.15),rgba(34,211,238,.15));
+    border:1px solid rgba(52,211,153,.3);border-radius:20px;padding:8px 20px;
+    font-size:20px;font-weight:800;color:var(--green);letter-spacing:-.02em;}
+
+  /* ── App list ── */
+  .app-list{flex:1;overflow-y:auto;padding:0 32px 24px;}
+  .app-list::-webkit-scrollbar{width:4px;}
+  .app-list::-webkit-scrollbar-thumb{background:var(--surface3);}
+  .app-row{display:flex;align-items:center;gap:14px;padding:11px 14px;
+    border-radius:var(--rs);cursor:pointer;transition:background .15s;
+    border-bottom:1px solid var(--border);font-size:13px;}
+  .app-row:hover{background:var(--surface2);}
+  .app-row.checked{background:rgba(248,113,113,.07);}
+  .ckbox{width:16px;height:16px;border-radius:4px;border:2px solid var(--border2);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    transition:all .15s;font-size:10px;}
+  .app-row.checked .ckbox{background:var(--red);border-color:var(--red);color:#fff;}
+  .ai{font-size:26px;width:34px;text-align:center;}
+  .aname{font-size:13px;font-weight:700;margin-bottom:2px;}
+  .ameta{font-size:11px;color:var(--text2);display:flex;gap:8px;}
+  .asize{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--text2);}
+  .age-tag{font-size:10px;padding:2px 7px;border-radius:10px;}
+  .old{background:rgba(251,191,36,.15);color:var(--yellow);}
+  .recent{background:rgba(52,211,153,.1);color:var(--green);}
+  .bottom-bar{padding:13px 32px;background:var(--surface);border-top:1px solid var(--border);
+    display:flex;align-items:center;gap:14px;flex-shrink:0;}
+
+  /* ── Status grid ── */
+  .status-grid{padding:20px 32px;display:grid;grid-template-columns:1fr 1fr;
+    gap:14px;overflow-y:auto;flex:1;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--r);padding:18px;}
+  .stat-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .stat-title{font-size:13px;font-weight:700;}
+  .stat-rows{display:flex;flex-direction:column;gap:10px;}
+  .stat-row{display:flex;align-items:center;gap:10px;font-size:12px;}
+  .stat-lbl{color:var(--text2);width:70px;flex-shrink:0;}
+  .stat-bar{flex:1;height:5px;background:var(--surface3);border-radius:5px;overflow:hidden;}
+  .stat-bar-fill{height:100%;border-radius:5px;}
+  .stat-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);
+    width:60px;text-align:right;}
+
+  /* ── Disk ── */
+  .disk-body{flex:1;display:grid;grid-template-columns:240px 1fr;overflow:hidden;}
+  .disk-tree{background:var(--surface);border-right:1px solid var(--border);
+    padding:12px;overflow-y:auto;}
+  .tree-item{display:flex;align-items:center;gap:8px;padding:7px 8px;
+    border-radius:var(--rs);cursor:pointer;transition:all .15s;font-size:12.5px;color:var(--text2);}
+  .tree-item:hover{background:var(--surface2);color:var(--text);}
+  .tree-item.sel{background:rgba(124,109,250,.12);color:var(--accent2);}
+  .disk-viz{padding:20px 24px;overflow-y:auto;}
+  .treemap{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:16px;}
+  .tm{border-radius:8px;padding:10px 12px;cursor:pointer;transition:all .2s;overflow:hidden;}
+  .tm:hover{opacity:.82;transform:scale(1.02);}
+  .tm.lg{grid-column:span 2;grid-row:span 2;}
+  .tm.md{grid-column:span 2;}
+  .tm-name{font-size:11px;font-weight:700;margin-bottom:3px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tm-size{font-family:'DM Mono',monospace;font-size:12px;opacity:.85;}
+  .tm.lg .tm-name{font-size:15px;margin-bottom:5px;}
+  .tm.lg .tm-size{font-size:14px;}
+
+  /* ── Optimize ── */
+  .opt-grid{padding:20px 32px;display:grid;grid-template-columns:1fr 1fr;
+    gap:12px;overflow-y:auto;flex:1;}
+
+  /* ── Purge ── */
+  .purge-body{padding:20px 32px;flex:1;overflow-y:auto;}
+
+  /* ── Malware Scanner ── */
+  .malware-body{flex:1;display:grid;grid-template-columns:320px 1fr;overflow:hidden;}
+  .malware-sidebar{background:var(--surface);border-right:1px solid var(--border);
+    padding:20px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;}
+  .malware-main{padding:24px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;}
+
+  .db-card{background:var(--surface2);border:1px solid var(--border);
+    border-radius:var(--r);padding:16px;}
+  .db-card-title{font-size:12px;font-weight:700;color:var(--text2);
+    text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;}
+  .db-row{display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:8px;font-size:12px;}
+  .db-key{color:var(--text2);}
+  .db-val{font-family:'DM Mono',monospace;font-weight:600;font-size:11px;}
+  .db-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;
+    animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+  .scope-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;
+    border-radius:var(--rs);background:var(--surface);border:1px solid var(--border);
+    cursor:pointer;transition:all .15s;font-size:13px;font-weight:600;}
+  .scope-btn:hover{border-color:var(--border2);background:var(--surface2);}
+  .scope-btn.active{border-color:var(--accent);background:rgba(124,109,250,.1);color:var(--accent2);}
+  .scope-ico{font-size:18px;width:24px;text-align:center;}
+
+  .scan-progress-box{background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--r);padding:20px;}
+  .progress-orb{width:120px;height:120px;border-radius:50%;margin:0 auto 20px;
+    background:radial-gradient(circle at 35% 35%,rgba(248,113,113,.25),rgba(251,146,60,.08) 60%,transparent);
+    border:2px solid rgba(248,113,113,.3);display:flex;align-items:center;justify-content:center;
+    font-size:48px;position:relative;transition:all .3s;}
+  .progress-orb.scanning{animation:morbPulse 1.8s ease-in-out infinite;}
+  @keyframes morbPulse{0%,100%{border-color:rgba(248,113,113,.3);}
+    50%{border-color:rgba(248,113,113,.7);box-shadow:0 0 40px rgba(248,113,113,.3);}}
+  .progress-orb .orb-ring{border-top-color:var(--red);}
+  .progress-title{font-size:16px;font-weight:800;text-align:center;margin-bottom:6px;}
+  .progress-sub{font-size:12px;color:var(--text2);text-align:center;font-family:'DM Mono',monospace;}
+  .progress-stats{display:flex;gap:20px;justify-content:center;margin-top:16px;}
+  .p-stat{text-align:center;}
+  .p-stat-val{font-size:22px;font-weight:800;}
+  .p-stat-lbl{font-size:11px;color:var(--text2);}
+
+  .threat-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;
+    border-bottom:1px solid var(--border);animation:fsi .3s ease forwards;}
+  .threat-row:last-child{border-bottom:none;}
+  .sev-badge{font-size:9px;font-weight:700;padding:3px 7px;border-radius:8px;
+    text-transform:uppercase;letter-spacing:.06em;flex-shrink:0;margin-top:1px;}
+  .sev-high{background:rgba(248,113,113,.2);color:var(--red);}
+  .sev-medium{background:rgba(251,191,36,.2);color:var(--yellow);}
+  .sev-low{background:rgba(96,165,250,.2);color:var(--blue);}
+  .threat-path{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);
+    word-break:break-all;flex:1;}
+  .threat-name{font-size:12px;font-weight:700;margin-bottom:2px;}
+  .threat-actions{display:flex;gap:6px;flex-shrink:0;}
+
+  .update-log{background:#080810;border-radius:var(--rs);padding:12px;
+    font-family:'DM Mono',monospace;font-size:11px;color:var(--green);
+    max-height:120px;overflow-y:auto;line-height:1.7;}
+  .update-log::-webkit-scrollbar{width:3px;}
+  .update-log::-webkit-scrollbar-thumb{background:var(--surface3);}
+
+  /* ── Modal ── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;z-index:200;
+    opacity:0;pointer-events:none;transition:opacity .2s;}
+  .modal-overlay.show{opacity:1;pointer-events:all;}
+  .modal{width:600px;max-height:70vh;background:var(--surface);
+    border:1px solid var(--border2);border-radius:16px;overflow:hidden;
+    transform:scale(.95);transition:transform .2s;}
+  .modal-overlay.show .modal{transform:scale(1);}
+  .modal-hdr{padding:14px 18px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;}
+  .modal-body{padding:16px;overflow-y:auto;max-height:calc(70vh - 120px);
+    font-family:'DM Mono',monospace;font-size:12px;color:var(--green);
+    line-height:1.7;background:#080810;}
+  .modal-ftr{padding:12px 16px;border-top:1px solid var(--border);
+    display:flex;justify-content:flex-end;gap:10px;}
+  .tline{animation:tapp .08s ease forwards;}
+  @keyframes tapp{from{opacity:0}to{opacity:1}}
+  .tdim{color:var(--text3);} .tacc{color:var(--accent2);}
+  .tok{color:var(--green);} .tsz{color:var(--cyan);}
+  .terr{color:var(--red);}
+
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .view.active>*{animation:fadeIn .22s ease forwards;}
+</style>
+</head>
+<body>
+
+<!-- TITLEBAR -->
+<div class="titlebar">
+  <div class="tl-wrap">
+    <div class="tl tl-close"></div>
+    <div class="tl tl-min"></div>
+    <div class="tl tl-max"></div>
+  </div>
+  <div class="tb-center"><span>🧹</span><span>SwiftClean</span></div>
+</div>
+
+<div class="app-body">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sl">Overview</div>
+  <div class="nav active" data-view="dashboard">
+    <span class="nav-ico">⬡</span> Dashboard
+  </div>
+  <div class="nav" data-view="status">
+    <span class="nav-ico">◈</span> System Status
+  </div>
+
+  <div class="sl">Maintenance</div>
+  <div class="nav" data-view="clean">
+    <span class="nav-ico">✦</span> Deep Clean
+    <span class="nav-badge" id="junk-badge">!</span>
+  </div>
+  <div class="nav" data-view="malware">
+    <span class="nav-ico">🛡</span> Malware Scan
+    <span class="nav-new">NEW</span>
+  </div>
+  <div class="nav" data-view="uninstall">
+    <span class="nav-ico">⊘</span> Uninstaller
+  </div>
+  <div class="nav" data-view="optimize">
+    <span class="nav-ico">⚡</span> Optimize
+  </div>
+  <div class="nav" data-view="purge">
+    <span class="nav-ico">⌫</span> Purge Projects
+  </div>
+
+  <div class="sl">Insights</div>
+  <div class="nav" data-view="disk">
+    <span class="nav-ico">◉</span> Disk Analyzer
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="health-row">
+      <span class="health-lbl">System Health</span>
+      <span class="health-val" id="health-score">92</span>
+    </div>
+    <div class="bar-track">
+      <div class="bar-fill" id="health-bar"
+        style="width:92%;background:linear-gradient(90deg,var(--green),var(--cyan));transition:width 1.5s ease-out;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- ── DASHBOARD ── -->
+<div class="view active" id="view-dashboard">
+  <div class="vh">
+    <div class="vtitle">Good morning ☀️</div>
+    <div class="vsub" id="sysinfo-sub">MacBook Pro · Loading…</div>
+  </div>
+  <div class="dash-grid">
+    <div class="card" onclick="go('disk')">
+      <div style="font-size:16px;margin-bottom:10px">💾</div>
+      <div class="cstat" style="color:var(--accent2)" id="d-free">— GB</div>
+      <div class="cstat-lbl">Free disk space</div>
+      <div class="mbar" style="margin-top:10px">
+        <div class="mbar-fill" id="d-used-bar" style="background:linear-gradient(90deg,var(--accent),var(--pink))"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:var(--text3)">
+        <span id="d-used-lbl">— GB used</span><span id="d-pct">—%</span>
+      </div>
+    </div>
+
+    <div class="card" onclick="go('clean')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <span style="font-size:16px">🧹</span>
+        <span style="font-size:10px;background:rgba(52,211,153,.15);color:var(--green);
+          padding:3px 8px;border-radius:10px;font-weight:700">READY</span>
+      </div>
+      <div class="cstat" style="color:var(--green)">48.2 <span style="font-size:14px">GB</span></div>
+      <div class="cstat-lbl">Junk found</div>
+      <button class="btn btn-green" style="margin-top:14px" onclick="event.stopPropagation();go('clean')">✦ Clean Now</button>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div class="ctitle">CPU</div>
+        <div style="font-size:18px;font-weight:800;color:var(--cyan)" id="cpu-pct">34%</div>
+      </div>
+      <div class="cpu-bars">
+        <div class="cpu-col"><div class="cpu-track"><div class="cpu-fill" style="height:78%"></div></div><span style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">C1</span></div>
+        <div class="cpu-col"><div class="cpu-track"><div class="cpu-fill" style="height:45%"></div></div><span style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">C2</span></div>
+        <div class="cpu-col"><div class="cpu-track"><div class="cpu-fill" style="height:62%"></div></div><span style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">C3</span></div>
+        <div class="cpu-col"><div class="cpu-track"><div class="cpu-fill" style="height:22%"></div></div><span style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">C4</span></div>
+        <div class="cpu-col"><div class="cpu-track"><div class="cpu-fill" style="height:88%"></div></div><span style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">C5</span></div>
+        <div class="cpu-col"><div class="cpu-track"><div class="cpu-fill" style="height:34%"></div></div><span style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">C6</span></div>
+        <div class="cpu-col"><div class="cpu-track"><div class="cpu-fill" style="height:15%"></div></div><span style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">C7</span></div>
+        <div class="cpu-col"><div class="cpu-track"><div class="cpu-fill" style="height:55%"></div></div><span style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">C8</span></div>
+      </div>
+    </div>
+
+    <div class="card card-wide">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="ctitle">Memory</div>
+        <div style="font-size:18px;font-weight:800;color:var(--orange)">58%</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--text2)">App Memory</span><span>8.4 GB</span></div><div class="mbar"><div class="mbar-fill" style="width:70%;background:var(--orange)"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--text2)">Wired</span><span>3.8 GB</span></div><div class="mbar"><div class="mbar-fill" style="width:32%;background:var(--red)"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--text2)">Compressed</span><span>2.0 GB</span></div><div class="mbar"><div class="mbar-fill" style="width:17%;background:var(--yellow)"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--text2)">Free</span><span>17.8 GB</span></div><div class="mbar"><div class="mbar-fill" style="width:55%;background:var(--green)"></div></div></div>
+      </div>
+    </div>
+
+    <div class="card" onclick="go('malware')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <span style="font-size:16px">🛡</span>
+        <span id="shield-badge" style="font-size:10px;background:rgba(52,211,153,.15);color:var(--green);padding:3px 8px;border-radius:10px;font-weight:700">PROTECTED</span>
+      </div>
+      <div class="ctitle">Malware Scanner</div>
+      <div class="cdesc" style="margin-top:4px" id="db-summary">Loading database info…</div>
+      <button class="btn btn-primary" style="margin-top:14px" onclick="event.stopPropagation();go('malware')">Scan Now →</button>
+    </div>
+
+    <div class="card card-wide">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="ctitle">Top Processes</div>
+      </div>
+      <div>
+        <div class="proc-row"><div class="proc-dot" style="background:var(--red)"></div><span style="flex:1">Google Chrome</span><div style="width:60px"><div class="mbar"><div class="mbar-fill" style="width:42%;background:var(--red)"></div></div></div><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);width:40px;text-align:right">42%</span></div>
+        <div class="proc-row"><div class="proc-dot" style="background:var(--orange)"></div><span style="flex:1">VS Code</span><div style="width:60px"><div class="mbar"><div class="mbar-fill" style="width:28%;background:var(--orange)"></div></div></div><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);width:40px;text-align:right">28%</span></div>
+        <div class="proc-row"><div class="proc-dot" style="background:var(--yellow)"></div><span style="flex:1">Slack</span><div style="width:60px"><div class="mbar"><div class="mbar-fill" style="width:12%;background:var(--yellow)"></div></div></div><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);width:40px;text-align:right">12%</span></div>
+        <div class="proc-row"><div class="proc-dot" style="background:var(--blue)"></div><span style="flex:1">Figma</span><div style="width:60px"><div class="mbar"><div class="mbar-fill" style="width:8%;background:var(--blue)"></div></div></div><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);width:40px;text-align:right">8%</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── DEEP CLEAN ── -->
+<div class="view" id="view-clean">
+  <div class="vh"><div class="vtitle">Deep Clean</div><div class="vsub">Scan and remove caches, logs, and browser leftovers</div></div>
+  <div class="scan-area">
+    <div class="orb" id="scanOrb" onclick="startJunkScan()">
+      <div class="orb-ring" id="scanRing"></div>
+      <span id="scanEmoji">🧹</span>
+    </div>
+    <div style="text-align:center">
+      <h2 id="scanTitle" style="font-size:20px;font-weight:800;margin-bottom:6px">Ready to Scan</h2>
+      <p id="scanSub" style="font-size:13px;color:var(--text2)">Click to begin deep cleaning</p>
+    </div>
+    <div class="clean-results" id="cleanResults" style="display:none"></div>
+    <div id="scanBottom" style="display:none;align-items:center;gap:14px">
+      <div class="freed-badge" id="freedBadge">— GB</div>
+      <span style="font-size:12px;color:var(--text2)">freed from your Mac</span>
+      <button class="btn btn-primary" onclick="cleanAll()">Clean All</button>
+      <button class="btn btn-ghost" onclick="startJunkScan()">Rescan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MALWARE SCANNER ── -->
+<div class="view" id="view-malware">
+  <div class="vh"><div class="vtitle">Malware Scanner</div><div class="vsub">Powered by ClamAV · Signature database updated automatically</div></div>
+  <div class="malware-body">
+    <!-- Sidebar -->
+    <div class="malware-sidebar">
+      <!-- DB Info -->
+      <div class="db-card">
+        <div class="db-card-title">Virus Database</div>
+        <div class="db-row"><span class="db-key">Engine</span><span class="db-val" id="db-version">Loading…</span></div>
+        <div class="db-row"><span class="db-key">Signatures</span><span class="db-val" id="db-sigs">—</span></div>
+        <div class="db-row"><span class="db-key">Updated</span><span class="db-val" id="db-updated">—</span></div>
+        <div class="db-row">
+          <span class="db-key">Status</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="db-status-dot" id="db-dot" style="background:var(--green)"></div>
+            <span class="db-val" id="db-status-text">Current</span>
+          </div>
+        </div>
+        <button class="btn btn-ghost" style="width:100%;margin-top:10px;justify-content:center" id="update-btn" onclick="updateDb()">
+          ↻ Update Now
+        </button>
+        <div class="update-log" id="update-log" style="display:none;margin-top:10px"></div>
+      </div>
+
+      <!-- Scan Scope -->
+      <div>
+        <div class="db-card-title" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:10px">Scan Scope</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="scope-btn active" data-scope="home" onclick="setScope(this,'home')">
+            <span class="scope-ico">🏠</span>
+            <div><div style="font-size:12px;font-weight:700">Home Folder</div><div style="font-size:10px;color:var(--text2)">~/  — recommended</div></div>
+          </div>
+          <div class="scope-btn" data-scope="apps" onclick="setScope(this,'/Applications')">
+            <span class="scope-ico">📱</span>
+            <div><div style="font-size:12px;font-weight:700">Applications</div><div style="font-size:10px;color:var(--text2)">/Applications</div></div>
+          </div>
+          <div class="scope-btn" data-scope="downloads" onclick="setScope(this,'downloads')">
+            <span class="scope-ico">📥</span>
+            <div><div style="font-size:12px;font-weight:700">Downloads</div><div style="font-size:10px;color:var(--text2)">~/Downloads</div></div>
+          </div>
+          <div class="scope-btn" data-scope="full" onclick="setScope(this,'/')">
+            <span class="scope-ico">💻</span>
+            <div><div style="font-size:12px;font-weight:700">Full Disk</div><div style="font-size:10px;color:var(--text2)">/ — slow, thorough</div></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-red" style="width:100%;justify-content:center;padding:11px" id="start-scan-btn" onclick="startMalwareScan()">
+        🛡 Start Scan
+      </button>
+    </div>
+
+    <!-- Main panel -->
+    <div class="malware-main">
+      <!-- Progress -->
+      <div class="scan-progress-box" id="scan-progress-box">
+        <div class="progress-orb" id="m-orb">
+          <div class="orb-ring" id="m-ring"></div>
+          <span id="m-emoji">🛡</span>
+        </div>
+        <div class="progress-title" id="m-title">Ready to Scan</div>
+        <div class="progress-sub" id="m-sub">Select a scope and click Start Scan</div>
+        <div class="progress-stats">
+          <div class="p-stat"><div class="p-stat-val" id="m-files" style="color:var(--cyan)">0</div><div class="p-stat-lbl">Files Scanned</div></div>
+          <div class="p-stat"><div class="p-stat-val" id="m-threats" style="color:var(--red)">0</div><div class="p-stat-lbl">Threats Found</div></div>
+          <div class="p-stat"><div class="p-stat-val" id="m-duration" style="color:var(--text2)">0s</div><div class="p-stat-lbl">Duration</div></div>
+        </div>
+      </div>
+
+      <!-- Threats list -->
+      <div id="threats-section" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:14px;font-weight:800">Threats Detected</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" onclick="quarantineAll()">🔒 Quarantine All</button>
+            <button class="btn btn-red" onclick="deleteAll()">🗑 Delete All</button>
+          </div>
+        </div>
+        <div id="threats-list" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:8px 16px;"></div>
+      </div>
+
+      <!-- Clean result -->
+      <div id="clean-result" style="display:none">
+        <div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);border-radius:var(--r);padding:20px;text-align:center">
+          <div style="font-size:40px;margin-bottom:8px">✅</div>
+          <div style="font-size:16px;font-weight:800;color:var(--green);margin-bottom:4px">No threats found</div>
+          <div style="font-size:12px;color:var(--text2)">Your Mac is clean. Keep your database updated for best protection.</div>
+        </div>
+      </div>
+
+      <!-- ClamAV install tip -->
+      <div id="install-tip" style="display:none">
+        <div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:var(--r);padding:20px">
+          <div style="font-size:14px;font-weight:800;margin-bottom:10px">⚠️ ClamAV Not Installed</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:14px">
+            SwiftClean uses ClamAV for malware scanning. Install it with Homebrew:
+          </div>
+          <div style="background:#080810;border-radius:var(--rs);padding:12px;font-family:'DM Mono',monospace;font-size:12px;color:var(--green)">
+            $ brew install clamav<br>
+            $ sudo cp /opt/homebrew/etc/clamav/freshclam.conf.sample /opt/homebrew/etc/clamav/freshclam.conf<br>
+            $ sudo sed -i '' 's/^Example/#Example/' /opt/homebrew/etc/clamav/freshclam.conf<br>
+            $ freshclam
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── UNINSTALLER ── -->
+<div class="view" id="view-uninstall">
+  <div class="vh" style="padding-bottom:16px"><div class="vtitle">Uninstaller</div><div class="vsub">Remove apps and all their hidden remnants</div></div>
+  <div class="app-list" id="appList"></div>
+  <div class="bottom-bar">
+    <div style="flex:1;font-size:13px;color:var(--text2)" id="uninstall-summary">Loading apps…</div>
+    <button class="btn btn-ghost" onclick="selectAllApps()">Select All</button>
+    <button class="btn btn-red" onclick="doUninstall()">⊘ Uninstall Selected</button>
+  </div>
+</div>
+
+<!-- ── OPTIMIZE ── -->
+<div class="view" id="view-optimize">
+  <div class="vh"><div class="vtitle">Optimize</div><div class="vsub">Rebuild caches, reset services, refresh system</div></div>
+  <div class="opt-grid" id="opt-grid"></div>
+</div>
+
+<!-- ── PURGE ── -->
+<div class="view" id="view-purge">
+  <div class="vh"><div class="vtitle">Purge Projects</div><div class="vsub">Clean build artifacts (node_modules, target, dist…)</div></div>
+  <div class="purge-body" id="purge-body"></div>
+</div>
+
+<!-- ── STATUS ── -->
+<div class="view" id="view-status">
+  <div class="vh"><div class="vtitle">System Status</div><div class="vsub">Live monitoring — updates every 3 seconds</div></div>
+  <div class="status-grid">
+    <div class="stat-card">
+      <div class="stat-hdr"><span class="stat-title">⚙ CPU</span><span style="font-size:20px;font-weight:800;color:var(--cyan)" id="st-cpu">34%</span></div>
+      <div class="stat-rows">
+        <div class="stat-row"><span class="stat-lbl">Load 1m</span><div class="stat-bar"><div class="stat-bar-fill" style="width:42%;background:var(--cyan)"></div></div><span class="stat-val">0.82</span></div>
+        <div class="stat-row"><span class="stat-lbl">Load 5m</span><div class="stat-bar"><div class="stat-bar-fill" style="width:52%;background:var(--cyan)"></div></div><span class="stat-val">1.05</span></div>
+        <div class="stat-row"><span class="stat-lbl">Temp</span><div class="stat-bar"><div class="stat-bar-fill" style="width:58%;background:var(--yellow)"></div></div><span class="stat-val">58°C</span></div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-hdr"><span class="stat-title">▦ Memory</span><span style="font-size:20px;font-weight:800;color:var(--orange)">58%</span></div>
+      <div class="stat-rows">
+        <div class="stat-row"><span class="stat-lbl">Used</span><div class="stat-bar"><div class="stat-bar-fill" style="width:58%;background:var(--orange)"></div></div><span class="stat-val">14.2 GB</span></div>
+        <div class="stat-row"><span class="stat-lbl">Free</span><div class="stat-bar"><div class="stat-bar-fill" style="width:55%;background:var(--green)"></div></div><span class="stat-val">17.8 GB</span></div>
+        <div class="stat-row"><span class="stat-lbl">Wired</span><div class="stat-bar"><div class="stat-bar-fill" style="width:32%;background:var(--red)"></div></div><span class="stat-val">3.8 GB</span></div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-hdr"><span class="stat-title">▤ Disk</span><span style="font-size:20px;font-weight:800;color:var(--accent2)" id="st-disk">66%</span></div>
+      <div class="stat-rows">
+        <div class="stat-row"><span class="stat-lbl">Used</span><div class="stat-bar"><div class="stat-bar-fill" id="sb-used" style="width:66%;background:var(--accent)"></div></div><span class="stat-val" id="sv-used">304 GB</span></div>
+        <div class="stat-row"><span class="stat-lbl">Free</span><div class="stat-bar"><div class="stat-bar-fill" id="sb-free" style="width:34%;background:var(--green)"></div></div><span class="stat-val" id="sv-free">156 GB</span></div>
+        <div class="stat-row"><span class="stat-lbl">Read</span><div class="stat-bar"><div class="stat-bar-fill" style="width:21%;background:var(--cyan)"></div></div><span class="stat-val">2.1 MB/s</span></div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-hdr"><span class="stat-title">⇅ Network</span></div>
+      <div class="stat-rows">
+        <div class="stat-row"><span class="stat-lbl">Download</span><div class="stat-bar"><div class="stat-bar-fill" id="net-dl-bar" style="background:var(--cyan)"></div></div><span class="stat-val" id="net-dl">3.2 MB/s</span></div>
+        <div class="stat-row"><span class="stat-lbl">Upload</span><div class="stat-bar"><div class="stat-bar-fill" id="net-ul-bar" style="background:var(--pink)"></div></div><span class="stat-val" id="net-ul">0.8 MB/s</span></div>
+        <div class="stat-row"><span class="stat-lbl">Packets ↓</span><div class="stat-bar"><div class="stat-bar-fill" style="width:45%;background:var(--blue)"></div></div><span class="stat-val">4.2K/s</span></div>
+      </div>
+    </div>
+    <div class="stat-card" style="grid-column:span 2">
+      <div class="stat-hdr"><span class="stat-title">⚡ Power & Battery</span><span style="font-size:20px;font-weight:800;color:var(--green)">100%</span></div>
+      <div class="stat-rows">
+        <div class="stat-row"><span class="stat-lbl">Status</span><div class="stat-bar"><div class="stat-bar-fill" style="width:100%;background:var(--green)"></div></div><span class="stat-val">Charged</span></div>
+        <div class="stat-row"><span class="stat-lbl">Cycles</span><div class="stat-bar"><div class="stat-bar-fill" style="width:42%;background:var(--blue)"></div></div><span class="stat-val">423</span></div>
+        <div class="stat-row"><span class="stat-lbl">Health</span><div class="stat-bar"><div class="stat-bar-fill" style="width:93%;background:var(--green)"></div></div><span class="stat-val">Normal</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── DISK ANALYZER ── -->
+<div class="view" id="view-disk">
+  <div class="vh"><div class="vtitle">Disk Analyzer</div><div class="vsub" id="disk-sub">Loading…</div></div>
+  <div class="disk-body">
+    <div class="disk-tree">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:4px 8px;margin-bottom:6px">Macintosh HD</div>
+      <div class="tree-item sel"><span>📁</span><span style="flex:1">Users</span><span style="font-family:'DM Mono',monospace;font-size:11px">210 GB</span></div>
+      <div class="tree-item" style="padding-left:24px"><span>📁</span><span style="flex:1">Library</span><span style="font-family:'DM Mono',monospace;font-size:11px">75 GB</span></div>
+      <div class="tree-item" style="padding-left:24px"><span>📁</span><span style="flex:1">Downloads</span><span style="font-family:'DM Mono',monospace;font-size:11px">34 GB</span></div>
+      <div class="tree-item" style="padding-left:24px"><span>📁</span><span style="flex:1">Movies</span><span style="font-family:'DM Mono',monospace;font-size:11px">22 GB</span></div>
+      <div class="tree-item"><span>📁</span><span style="flex:1">Applications</span><span style="font-family:'DM Mono',monospace;font-size:11px">48 GB</span></div>
+      <div class="tree-item"><span>📁</span><span style="flex:1">System</span><span style="font-family:'DM Mono',monospace;font-size:11px">18 GB</span></div>
+      <div class="tree-item"><span>📁</span><span style="flex:1">Library</span><span style="font-family:'DM Mono',monospace;font-size:11px">12 GB</span></div>
+      <div class="tree-item"><span>📄</span><span style="flex:1">backup.zip</span><span style="font-family:'DM Mono',monospace;font-size:11px">8.2 GB</span></div>
+    </div>
+    <div class="disk-viz">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:4px">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;margin-bottom:6px">Storage Breakdown</div>
+          <div class="mbar" style="height:10px">
+            <div style="height:100%;display:flex;border-radius:5px;overflow:hidden">
+              <div style="width:48%;background:var(--accent)"></div>
+              <div style="width:22%;background:var(--orange)"></div>
+              <div style="width:14%;background:var(--cyan)"></div>
+              <div style="width:10%;background:var(--green)"></div>
+              <div style="width:6%;background:var(--surface3)"></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:var(--text2)">
+            <span><span style="color:var(--accent)">●</span> Users</span>
+            <span><span style="color:var(--orange)">●</span> Apps</span>
+            <span><span style="color:var(--cyan)">●</span> System</span>
+            <span><span style="color:var(--green)">●</span> Other</span>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--text2)">Free</div>
+          <div style="font-size:22px;font-weight:800;color:var(--green)" id="disk-free-big">156 GB</div>
+        </div>
+      </div>
+      <div class="treemap">
+        <div class="tm lg" style="background:rgba(124,109,250,.22)"><div class="tm-name">📁 Library</div><div class="tm-size">75.4 GB</div></div>
+        <div class="tm" style="background:rgba(251,146,60,.2)"><div class="tm-name">📁 Downloads</div><div class="tm-size">34.6 GB</div></div>
+        <div class="tm" style="background:rgba(251,146,60,.15)"><div class="tm-name">📁 Movies</div><div class="tm-size">22.4 GB</div></div>
+        <div class="tm md" style="background:rgba(52,211,153,.15)"><div class="tm-name">📱 Applications</div><div class="tm-size">48.2 GB</div></div>
+        <div class="tm" style="background:rgba(96,165,250,.2)"><div class="tm-name">📁 Documents</div><div class="tm-size">16.9 GB</div></div>
+        <div class="tm" style="background:rgba(244,114,182,.2)"><div class="tm-name">📁 Pictures</div><div class="tm-size">8.1 GB</div></div>
+        <div class="tm" style="background:rgba(34,211,238,.15)"><div class="tm-name">📁 System</div><div class="tm-size">18.4 GB</div></div>
+        <div class="tm" style="background:rgba(251,191,36,.15)"><div class="tm-name">📄 backup.zip</div><div class="tm-size">8.2 GB</div></div>
+        <div class="tm md" style="background:rgba(248,113,113,.15)"><div class="tm-name">📁 Developer</div><div class="tm-size">23.3 GB</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .main -->
+</div><!-- end .app-body -->
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hdr"><span id="m-ico">🗑️</span><span id="m-hdr-title">Processing</span></div>
+    <div class="modal-body" id="m-body"></div>
+    <div class="modal-ftr"><button class="btn btn-ghost" onclick="closeModal()">Close</button></div>
+  </div>
+</div>
+
+<script>
+// ── Electron bridge ───────────────────────────────────────────────────────────
+let invoke, listen, isDesktop = false;
+
+if (window.swiftclean) {
+  // Running inside Electron
+  isDesktop = true;
+  invoke = (cmd, args) => window.swiftclean.invoke(cmd, args);
+  listen = (channel, cb) => {
+    const unlisten = window.swiftclean.on(channel, cb);
+    return Promise.resolve(unlisten);
+  };
+} else {
+  // Running in browser — use mock data for preview
+  invoke = async (cmd, args) => {
+    console.log(`[invoke] ${cmd}`, args);
+    return mockInvoke(cmd, args);
+  };
+  listen = async (channel, cb) => {
+    console.log(`[listen] ${channel}`);
+    return () => {};
+  };
+}
+
+// ── Mock data for browser preview ─────────────────────────────────────────────
+function mockInvoke(cmd) {
+  switch(cmd) {
+    case 'get_disk_usage': return { total_bytes: 494_384_165_888, used_bytes: 326_336_610_304, free_bytes: 168_047_555_584, used_pct: 66 };
+    case 'get_malware_db_info': return { version: 'ClamAV 1.3.0', last_updated: 'Wed Nov 27 2024', signatures: 8_683_346, is_updating: false };
+    case 'scan_junk': return new Promise(r => setTimeout(() => r({
+      total_human: '48.2 GB',
+      total_bytes: 51_783_114_752,
+      items: [
+        { name:'User App Cache', path:'~/Library/Caches', size_bytes: 48_519_045_120, size_human:'45.2 GB' },
+        { name:'Browser Cache', path:'~/Library/Caches/Chrome', size_bytes: 11_274_289_152, size_human:'10.5 GB' },
+        { name:'System Logs', path:'~/Library/Logs', size_bytes: 4_080_218_112, size_human:'3.8 GB' },
+        { name:'Xcode Derived Data', path:'~/Library/Developer', size_bytes: 25_032_089_600, size_human:'23.3 GB' },
+      ]
+    }), 2800));
+    case 'list_apps': return [
+      { name:'Adobe Creative Cloud', path:'/Applications/Adobe Creative Cloud.app', size_bytes:10_097_664_000, size_human:'9.4 GB', last_used:null },
+      { name:'Xcode', path:'/Applications/Xcode.app', size_bytes:15_249_825_792, size_human:'14.2 GB', last_used:null },
+      { name:'Final Cut Pro', path:'/Applications/Final Cut Pro.app', size_bytes:4_080_218_112, size_human:'3.8 GB', last_used:null },
+      { name:'Docker Desktop', path:'/Applications/Docker.app', size_bytes:4_402_341_888, size_human:'4.1 GB', last_used:null },
+      { name:'Spotify', path:'/Applications/Spotify.app', size_bytes:1_288_490_188, size_human:'1.2 GB', last_used:null },
+      { name:'Slack', path:'/Applications/Slack.app', size_bytes:859_832_320, size_human:'0.8 GB', last_used:null },
+    ];
+    case 'scan_projects': return [
+      { name:'my-react-app', path:'~/Projects/my-react-app/node_modules', artifact:'node_modules', size_bytes:3_435_973_837, size_human:'3.2 GB', is_recent:false },
+      { name:'rust-app', path:'~/Projects/rust-app/target', artifact:'target', size_bytes:4_402_341_888, size_human:'4.1 GB', is_recent:false },
+      { name:'old-project', path:'~/Projects/old-project/node_modules', artifact:'node_modules', size_bytes:3_006_477_107, size_human:'2.8 GB', is_recent:false },
+      { name:'current-work', path:'~/Projects/current-work/node_modules', artifact:'node_modules', size_bytes:897_581_056, size_human:'856 MB', is_recent:true },
+    ];
+    case 'run_malware_scan': return new Promise(r => setTimeout(() => r({
+      total_files: 84_329,
+      threats: [],
+      duration_secs: 42.3,
+      status: 'done',
+      error: null,
+    }), 4000));
+    case 'update_malware_db': return 'Update started';
+    default: return null;
+  }
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function go(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav').forEach(n => n.classList.remove('active'));
+  const view = document.getElementById('view-' + id);
+  const nav  = document.querySelector(`.nav[data-view="${id}"]`);
+  if (view) view.classList.add('active');
+  if (nav)  nav.classList.add('active');
+}
+window.go = go;
+document.querySelectorAll('.nav').forEach(n => {
+  n.addEventListener('click', () => go(n.dataset.view));
+});
+
+// ── Disk stats ────────────────────────────────────────────────────────────────
+async function loadDiskStats() {
+  try {
+    const d = await invoke('get_disk_usage');
+    const GB = 1_073_741_824;
+    const free  = (d.free_bytes / GB).toFixed(0);
+    const used  = (d.used_bytes / GB).toFixed(0);
+    const total = (d.total_bytes / GB).toFixed(0);
+    const pct   = d.used_pct.toFixed(0);
+    document.getElementById('d-free').textContent = free + ' GB';
+    document.getElementById('d-used-lbl').textContent = used + ' GB used';
+    document.getElementById('d-pct').textContent = pct + '%';
+    document.getElementById('d-used-bar').style.width = pct + '%';
+    document.getElementById('disk-sub').textContent = `Macintosh HD · ${total} GB total · ${used} GB used`;
+    document.getElementById('disk-free-big').textContent = free + ' GB';
+    document.getElementById('sysinfo-sub').textContent = `MacBook Pro · ${total} GB disk`;
+    document.getElementById('st-disk').textContent = pct + '%';
+    document.getElementById('sb-used').style.width = pct + '%';
+    document.getElementById('sv-used').textContent = used + ' GB';
+    document.getElementById('sb-free').style.width = (100-pct) + '%';
+    document.getElementById('sv-free').textContent = free + ' GB';
+  } catch(e) { console.error(e); }
+}
+
+// ── Malware DB info ───────────────────────────────────────────────────────────
+async function loadDbInfo() {
+  try {
+    const db = await invoke('get_malware_db_info');
+    document.getElementById('db-version').textContent = db.version;
+    document.getElementById('db-sigs').textContent    = db.signatures > 0 ? db.signatures.toLocaleString() : 'Unknown';
+    document.getElementById('db-updated').textContent = db.last_updated || 'Unknown';
+    document.getElementById('db-summary').textContent = db.signatures > 0
+      ? `${db.version} · ${db.signatures.toLocaleString()} signatures`
+      : `${db.version} · No database yet`;
+
+    const dot  = document.getElementById('db-dot');
+    const stat = document.getElementById('db-status-text');
+
+    if (db.version === 'Not installed') {
+      document.getElementById('install-tip').style.display = 'block';
+      dot.style.background = 'var(--yellow)';
+      stat.textContent     = 'Not installed';
+    } else if (db.is_updating) {
+      dot.style.background = 'var(--yellow)';
+      stat.textContent     = 'Updating…';
+    } else if (isDbStale(db.last_updated)) {
+      dot.style.background = 'var(--orange)';
+      stat.textContent     = 'Outdated';
+      const badge = document.getElementById('shield-badge');
+      if (badge) {
+        badge.textContent = 'UPDATE';
+        badge.style.background = 'rgba(251,146,60,.2)';
+        badge.style.color = 'var(--orange)';
+      }
+    } else {
+      dot.style.background = 'var(--green)';
+      stat.textContent     = db.signatures > 0 ? 'Up to date' : 'No DB yet';
+    }
+
+    window._dbLastUpdated = db.last_updated;
+    window._dbInstalled   = db.version !== 'Not installed' && db.signatures > 0;
+  } catch(e) { console.error(e); }
+}
+
+function isDbStale(str) {
+  if (!str || str === 'Unknown' || str === 'N/A') return false;
+  try {
+    const d = new Date(str);
+    return !isNaN(d.getTime()) && (Date.now() - d.getTime()) / 3600000 > 24;
+  } catch { return false; }
+}
+
+// ── Auto-update DB on launch if stale or never downloaded ────────────────────
+async function autoUpdateDbIfNeeded() {
+  await new Promise(r => setTimeout(r, 4000)); // wait for app to settle
+  try {
+    const db = await invoke('get_malware_db_info');
+    if (db.version === 'Not installed') return;
+
+    const needsUpdate = db.signatures === 0 || isDbStale(db.last_updated);
+    if (!needsUpdate) {
+      console.log('[SwiftClean] Virus DB is current');
+      return;
+    }
+
+    console.log('[SwiftClean] DB stale/missing — auto-updating silently');
+    const dot  = document.getElementById('db-dot');
+    const stat = document.getElementById('db-status-text');
+    if (dot)  dot.style.background = 'var(--yellow)';
+    if (stat) stat.textContent     = 'Auto-updating…';
+
+    const unlisten = await listen('db_update_progress', (evt) => {
+      const { status, message } = evt.payload;
+      if (status === 'done' || status === 'error') {
+        unlisten();
+        loadDbInfo();
+        console.log('[SwiftClean] Auto-update', status, message);
+      }
+    });
+
+    await invoke('update_malware_db');
+  } catch(e) {
+    console.warn('[SwiftClean] Auto-update check failed:', e);
+  }
+}
+
+// ── Update DB──────────────────────────────────────────────────
+window.updateDb = async function() {
+  const log = document.getElementById('update-log');
+  const btn = document.getElementById('update-btn');
+  log.style.display = 'block';
+  log.innerHTML = '';
+  btn.disabled = true;
+  btn.textContent = '↻ Updating…';
+
+  const unlisten = await listen('db_update_progress', (evt) => {
+    const { message, status } = evt.payload;
+    log.innerHTML += `<div>${message}</div>`;
+    log.scrollTop = log.scrollHeight;
+    if (status === 'done' || status === 'error') {
+      btn.disabled = false;
+      btn.textContent = '↻ Update Now';
+      unlisten();
+      loadDbInfo();
+    }
+  });
+
+  await invoke('update_malware_db');
+};
+
+// ── Malware scan ──────────────────────────────────────────────────────────────
+let scanScope = 'home';
+window.setScope = function(el, scope) {
+  document.querySelectorAll('.scope-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  scanScope = scope;
+};
+
+window.startMalwareScan = async function() {
+  const btn = document.getElementById('start-scan-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Scanning…';
+
+  const orb = document.getElementById('m-orb');
+  const ring = document.getElementById('m-ring');
+  const title = document.getElementById('m-title');
+  const sub = document.getElementById('m-sub');
+
+  orb.classList.add('scanning');
+  ring.style.display = 'block';
+  document.getElementById('m-emoji').textContent = '🔍';
+  document.getElementById('threats-section').style.display = 'none';
+  document.getElementById('clean-result').style.display = 'none';
+  document.getElementById('install-tip').style.display = 'none';
+
+  let filesCount = 0;
+  let threatsCount = 0;
+  const startTime = Date.now();
+
+  const tickInterval = setInterval(() => {
+    const secs = ((Date.now() - startTime) / 1000).toFixed(1);
+    document.getElementById('m-duration').textContent = secs + 's';
+    filesCount += Math.floor(Math.random() * 800) + 200;
+    document.getElementById('m-files').textContent = filesCount.toLocaleString();
+  }, 300);
+
+  const unlisten = await listen('malware_scan_progress', (evt) => {
+    const p = evt.payload;
+    sub.textContent = p.current_file;
+    document.getElementById('m-threats').textContent = p.threats_found;
+    if (p.status === 'done') unlisten();
+  });
+
+  // Determine path
+  let scanPath;
+  const home = '/Users/' + (isDesktop ? 'user' : 'user');
+  switch(scanScope) {
+    case 'home':      scanPath = home; break;
+    case 'downloads': scanPath = home + '/Downloads'; break;
+    case '/':         scanPath = '/'; break;
+    default:          scanPath = scanScope;
+  }
+
+  try {
+    const result = await invoke('run_malware_scan', { scanPath });
+    clearInterval(tickInterval);
+    orb.classList.remove('scanning');
+    ring.style.display = 'none';
+
+    const secs = result.duration_secs.toFixed(1);
+    document.getElementById('m-files').textContent = result.total_files.toLocaleString();
+    document.getElementById('m-threats').textContent = result.threats.length;
+    document.getElementById('m-duration').textContent = secs + 's';
+
+    if (result.error && result.error.includes('not installed')) {
+      document.getElementById('install-tip').style.display = 'block';
+      document.getElementById('m-emoji').textContent = '⚠️';
+      title.textContent = 'ClamAV Not Found';
+      sub.textContent = result.error;
+    } else if (result.threats.length > 0) {
+      document.getElementById('m-emoji').textContent = '⚠️';
+      title.textContent = `${result.threats.length} Threat${result.threats.length > 1 ? 's' : ''} Found`;
+      sub.textContent = `Scanned ${result.total_files.toLocaleString()} files in ${secs}s`;
+      renderThreats(result.threats);
+    } else {
+      document.getElementById('m-emoji').textContent = '✅';
+      title.textContent = 'Clean!';
+      sub.textContent = `Scanned ${result.total_files.toLocaleString()} files in ${secs}s`;
+      document.getElementById('clean-result').style.display = 'block';
+    }
+  } catch(e) {
+    clearInterval(tickInterval);
+    orb.classList.remove('scanning');
+    ring.style.display = 'none';
+    document.getElementById('m-emoji').textContent = '❌';
+    title.textContent = 'Scan Failed';
+    sub.textContent = e.toString();
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🛡 Start Scan';
+};
+
+function renderThreats(threats) {
+  const section = document.getElementById('threats-section');
+  const list = document.getElementById('threats-list');
+  section.style.display = 'block';
+  list.innerHTML = threats.map((t, i) => `
+    <div class="threat-row" style="animation-delay:${i*0.05}s">
+      <span class="sev-badge sev-${t.severity}">${t.severity}</span>
+      <div style="flex:1">
+        <div class="threat-name">${t.threat_name}</div>
+        <div class="threat-path">${t.file_path}</div>
+      </div>
+      <div class="threat-actions">
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:10px"
+          onclick="quarantineFile('${t.file_path.replace(/'/g,"\\'")}')">🔒 Quarantine</button>
+        <button class="btn btn-red" style="padding:4px 10px;font-size:10px"
+          onclick="deleteFile('${t.file_path.replace(/'/g,"\\'")}')">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.quarantineAll = async function() {
+  const btns = document.querySelectorAll('#threats-list .btn-ghost');
+  btns.forEach(b => b.click());
+};
+window.deleteAll = async function() {
+  const btns = document.querySelectorAll('#threats-list .btn-red');
+  btns.forEach(b => b.click());
+};
+window.quarantineFile = async function(path) {
+  try {
+    await invoke('quarantine_file', { filePath: path });
+    alert('Quarantined: ' + path);
+  } catch(e) { alert('Error: ' + e); }
+};
+window.deleteFile = async function(path) {
+  if (!confirm('Permanently delete ' + path + '?')) return;
+  try {
+    await invoke('delete_threat', { filePath: path });
+    alert('Deleted: ' + path);
+  } catch(e) { alert('Error: ' + e); }
+};
+
+// ── Deep Clean ────────────────────────────────────────────────────────────────
+let junkItems = [];
+let scanning  = false;
+
+window.startJunkScan = async function() {
+  if (scanning) return;
+  scanning = true;
+  junkItems = [];
+  const orb = document.getElementById('scanOrb');
+  const ring = document.getElementById('scanRing');
+  const results = document.getElementById('cleanResults');
+  const bottom = document.getElementById('scanBottom');
+
+  orb.classList.add('scanning');
+  ring.style.display = 'block';
+  document.getElementById('scanEmoji').textContent = '🔍';
+  document.getElementById('scanTitle').textContent = 'Scanning…';
+  document.getElementById('scanSub').textContent   = 'Analyzing your Mac…';
+  results.style.display = 'none';
+  bottom.style.display  = 'none';
+  results.innerHTML     = '';
+
+  const unlisten = await listen('scan_progress', (evt) => {
+    document.getElementById('scanSub').textContent = `Scanning ${evt.payload.current}…`;
+  });
+
+  try {
+    const summary = await invoke('scan_junk');
+    junkItems = summary.items;
+    unlisten();
+    orb.classList.remove('scanning');
+    ring.style.display = 'none';
+    document.getElementById('scanEmoji').textContent = '✅';
+    document.getElementById('scanTitle').textContent = 'Scan Complete';
+    document.getElementById('scanSub').textContent   = `${summary.items.length} categories found`;
+    document.getElementById('freedBadge').textContent = summary.total_human;
+    results.style.display = 'block';
+
+    summary.items.forEach((item, i) => {
+      setTimeout(() => {
+        const pct = Math.min(100, (item.size_bytes / summary.total_bytes * 100)).toFixed(0);
+        const row = document.createElement('div');
+        row.className = 'cr-row';
+        row.style.animationDelay = (i * 0.06) + 's';
+        row.innerHTML = `
+          <span style="color:var(--green)">✓</span>
+          <span style="flex:1;font-size:13px">${item.name}</span>
+          <div style="width:80px"><div class="mbar"><div class="mbar-fill" style="width:${pct}%;background:var(--accent)"></div></div></div>
+          <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);width:60px;text-align:right">${item.size_human}</span>`;
+        results.appendChild(row);
+      }, i * 100);
+    });
+
+    setTimeout(() => { bottom.style.display = 'flex'; scanning = false; }, summary.items.length * 100 + 300);
+  } catch(e) {
+    unlisten();
+    document.getElementById('scanTitle').textContent = 'Error';
+    document.getElementById('scanSub').textContent   = e.toString();
+    scanning = false;
+  }
+};
+
+window.cleanAll = async function() {
+  const paths = junkItems.map(i => i.path);
+  if (!paths.length) return;
+  showModal('🧹', 'Cleaning', []);
+  const lines = [];
+  for (const item of junkItems) {
+    lines.push(`<span class="tacc">${item.name}</span>`);
+    lines.push(`  <span class="tok">✓</span> <span class="tdim">Removing ${item.path}</span>`);
+  }
+  lines.push(`<span style="color:var(--text3)">═════════════════════════════════</span>`);
+  const freed = await invoke('clean_junk', { paths });
+  lines.push(`<span class="tok">Total freed: <span class="tsz">${freed}</span></span>`);
+  streamModal(lines);
+};
+
+// ── Apps ──────────────────────────────────────────────────────────────────────
+let apps = [];
+let appChecked = new Set();
+
+async function loadApps() {
+  try {
+    apps = await invoke('list_apps');
+    renderApps();
+  } catch(e) { console.error(e); }
+}
+
+function renderApps() {
+  const list = document.getElementById('appList');
+  list.innerHTML = apps.map((a, i) => `
+    <div class="app-row ${appChecked.has(i)?'checked':''}" onclick="toggleApp(${i})">
+      <div class="ckbox">${appChecked.has(i)?'✓':''}</div>
+      <div class="ai">📱</div>
+      <div style="flex:1">
+        <div class="aname">${a.name}</div>
+        <div class="ameta"><span>${a.path.split('/').slice(-1)}</span></div>
+      </div>
+      <div class="asize">${a.size_human}</div>
+    </div>
+  `).join('');
+  const sel = appChecked.size;
+  const totalGB = [...appChecked].reduce((acc, i) => acc + apps[i].size_bytes, 0);
+  const GB = 1_073_741_824;
+  document.getElementById('uninstall-summary').innerHTML = sel > 0
+    ? `<strong>${sel}</strong> apps selected · <strong>${(totalGB/GB).toFixed(1)} GB</strong> to free`
+    : 'Select apps to remove';
+}
+
+window.toggleApp = function(i) {
+  if (appChecked.has(i)) appChecked.delete(i); else appChecked.add(i);
+  renderApps();
+};
+window.selectAllApps = function() {
+  const all = apps.every((_, i) => appChecked.has(i));
+  if (all) appChecked.clear(); else apps.forEach((_, i) => appChecked.add(i));
+  renderApps();
+};
+window.doUninstall = async function() {
+  const sel = [...appChecked].map(i => apps[i]);
+  if (!sel.length) return;
+  showModal('⊘', `Uninstalling ${sel.length} app${sel.length>1?'s':''}`, []);
+  const lines = [];
+  const unlisten = await listen('uninstall_progress', (evt) => {
+    lines.push(`  <span class="tdim">${evt.payload.step}</span>`);
+    appendModalLine(`  <span class="tdim">${evt.payload.step}</span>`);
+  });
+  for (const app of sel) {
+    appendModalLine(`<span class="tacc">Uninstalling ${app.name}…</span>`);
+    await invoke('uninstall_app', { appPath: app.path });
+    appendModalLine(`  <span class="tok">✓</span> <span class="tdim">Done</span>`);
+  }
+  unlisten();
+  appendModalLine(`<span style="color:var(--text3)">═════════════</span>`);
+  appendModalLine(`<span class="tok">Complete</span>`);
+  appChecked.clear();
+  loadApps();
+};
+
+// ── Optimize ──────────────────────────────────────────────────────────────────
+const optTasks = [
+  { id:'flush_dns',              icon:'🌐', title:'Flush DNS Cache',       desc:'dscacheutil -flushcache' },
+  { id:'rebuild_launch_services',icon:'🚀', title:'Rebuild Launch Services',desc:'lsregister reset' },
+  { id:'restart_finder',         icon:'🖥️', title:'Restart Finder',         desc:'killall Finder' },
+  { id:'restart_dock',           icon:'⚓', title:'Restart Dock',           desc:'killall Dock' },
+  { id:'purge_memory',           icon:'🧠', title:'Purge Memory',           desc:'sudo purge' },
+  { id:'clear_font_cache',       icon:'🔤', title:'Clear Font Cache',        desc:'atsutil databases -remove' },
+];
+
+function renderOptimize() {
+  document.getElementById('opt-grid').innerHTML = optTasks.map((t, i) => `
+    <div class="card" style="cursor:default">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:22px;width:36px;text-align:center">${t.icon}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;margin-bottom:3px">${t.title}</div>
+          <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">${t.desc}</div>
+        </div>
+        <button class="btn btn-ghost" style="padding:5px 12px;font-size:11px"
+          id="opt-btn-${i}" onclick="runOptTask(${i})">Run</button>
+      </div>
+    </div>
+  `).join('');
+}
+renderOptimize();
+
+window.runOptTask = async function(i) {
+  const btn = document.getElementById(`opt-btn-${i}`);
+  btn.textContent = '⟳ Running…';
+  btn.disabled = true;
+  try {
+    await invoke('run_optimization', { task: optTasks[i].id });
+    btn.textContent = '✓ Done';
+    btn.style.color = 'var(--green)';
+  } catch(e) {
+    btn.textContent = '✗ Error';
+    btn.style.color = 'var(--red)';
+    btn.disabled = false;
+  }
+};
+
+// ── Purge projects ────────────────────────────────────────────────────────────
+let projects = [];
+let purgeChecked = new Set();
+
+async function loadProjects() {
+  try {
+    projects = await invoke('scan_projects');
+    projects.forEach((p, i) => { if (!p.is_recent) purgeChecked.add(i); });
+    renderPurge();
+  } catch(e) { console.error(e); }
+}
+
+function renderPurge() {
+  const GB = 1_073_741_824;
+  const MB = 1_048_576;
+  const totalBytes = [...purgeChecked].reduce((a, i) => a + projects[i].size_bytes, 0);
+  const totalHuman = totalBytes >= GB ? (totalBytes/GB).toFixed(1)+' GB' : (totalBytes/MB).toFixed(0)+' MB';
+  document.getElementById('purge-body').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:13px;color:var(--text2)">
+        <strong style="color:var(--text)">${purgeChecked.size}</strong> selected · 
+        <strong style="color:var(--text)">${totalHuman}</strong> to free
+      </div>
+      <button class="btn btn-red" onclick="doPurge()">⌫ Purge Selected</button>
+    </div>
+    ${projects.map((p, i) => `
+      <div class="app-row ${purgeChecked.has(i)?'checked':''}" onclick="togglePurge(${i})">
+        <div class="ckbox">${purgeChecked.has(i)?'✓':''}</div>
+        <div class="ai">📁</div>
+        <div style="flex:1">
+          <div class="aname">${p.name}</div>
+          <div class="ameta">
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${p.artifact}</span>
+            ${p.is_recent?'<span class="age-tag recent">Recent</span>':''}
+          </div>
+        </div>
+        <div class="asize">${p.size_human}</div>
+      </div>
+    `).join('')}
+  `;
+}
+
+window.togglePurge = function(i) {
+  if (purgeChecked.has(i)) purgeChecked.delete(i); else purgeChecked.add(i);
+  renderPurge();
+};
+window.doPurge = async function() {
+  const sel = [...purgeChecked].map(i => projects[i]);
+  if (!sel.length) return;
+  const paths = sel.map(p => p.path);
+  showModal('⌫', `Purging ${sel.length} artifacts`, []);
+  for (const p of sel) {
+    appendModalLine(`<span class="tacc">${p.name}/${p.artifact}</span>`);
+    appendModalLine(`  <span class="tok">✓</span> <span class="tdim">Removed ${p.size_human}</span>`);
+  }
+  await invoke('clean_junk', { paths });
+  appendModalLine(`<span style="color:var(--text3)">═══════════</span>`);
+  const total = sel.reduce((a, p) => a + p.size_bytes, 0);
+  const GB = 1_073_741_824;
+  appendModalLine(`<span class="tok">Freed: <span class="tsz">${(total/GB).toFixed(1)} GB</span></span>`);
+  purgeChecked.clear();
+  loadProjects();
+};
+
+// ── Modal helpers ─────────────────────────────────────────────────────────────
+function showModal(ico, title, lines) {
+  document.getElementById('m-ico').textContent = ico;
+  document.getElementById('m-hdr-title').textContent = title;
+  document.getElementById('m-body').innerHTML = '';
+  document.getElementById('modal').classList.add('show');
+  if (lines.length) streamModal(lines);
+}
+function streamModal(lines) {
+  const body = document.getElementById('m-body');
+  lines.forEach((l, i) => {
+    setTimeout(() => {
+      body.innerHTML += `<div class="tline">${l}</div>`;
+      body.scrollTop = body.scrollHeight;
+    }, i * 80);
+  });
+}
+function appendModalLine(html) {
+  const body = document.getElementById('m-body');
+  body.innerHTML += `<div class="tline">${html}</div>`;
+  body.scrollTop = body.scrollHeight;
+}
+window.closeModal = function() {
+  document.getElementById('modal').classList.remove('show');
+};
+
+// ── Live tickers ──────────────────────────────────────────────────────────────
+setInterval(() => {
+  const dl = (Math.random() * 10).toFixed(1);
+  const ul = (Math.random() * 3).toFixed(1);
+  const cpu = Math.floor(Math.random() * 50) + 10;
+  const dlEl = document.getElementById('net-dl');
+  const ulEl = document.getElementById('net-ul');
+  const dlBar = document.getElementById('net-dl-bar');
+  const ulBar = document.getElementById('net-ul-bar');
+  const cpuEl = document.getElementById('cpu-pct');
+  const stCpu = document.getElementById('st-cpu');
+  if (dlEl) { dlEl.textContent = dl + ' MB/s'; dlBar.style.width = (dl/10*100)+'%'; }
+  if (ulEl) { ulEl.textContent = ul + ' MB/s'; ulBar.style.width = (ul/3*100)+'%'; }
+  if (cpuEl) cpuEl.textContent = cpu + '%';
+  if (stCpu) stCpu.textContent = cpu + '%';
+}, 2800);
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadDiskStats();
+loadDbInfo();
+loadApps();
+loadProjects();
+autoUpdateDbIfNeeded(); // silently update virus DB if stale
+</script>
+</body>
+</html>

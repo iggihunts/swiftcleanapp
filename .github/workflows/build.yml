@@ -1,0 +1,149 @@
+name: Build DMG
+
+on:
+  push:
+    branches: [main]
+    tags:     ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-14
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install ClamAV
+        run: |
+          brew install clamav
+          # Configure freshclam
+          cp /opt/homebrew/etc/clamav/freshclam.conf.sample \
+             /opt/homebrew/etc/clamav/freshclam.conf
+          sed -i '' 's/^Example/#Example/' /opt/homebrew/etc/clamav/freshclam.conf
+          # Download virus database
+          freshclam || true
+          echo "ClamAV version: $(clamscan --version | head -1)"
+
+      - name: Stage ClamAV binaries
+        run: |
+          mkdir -p bin
+          cp /opt/homebrew/bin/clamscan  bin/clamscan
+          cp /opt/homebrew/bin/freshclam bin/freshclam
+          chmod +x bin/clamscan bin/freshclam
+          echo "Staged binaries:"
+          ls -lh bin/
+
+      - name: Generate app icons
+        run: |
+          mkdir -p assets
+
+          python3 - << 'PYEOF'
+          import struct, zlib, os
+
+          def make_png(size, bg=(20,20,24,255), fg=(124,109,250,255)):
+              def chunk(t, d):
+                  c = zlib.crc32(t+d) & 0xffffffff
+                  return struct.pack('>I', len(d)) + t + d + struct.pack('>I', c)
+              rows = []
+              mid = size // 2
+              r   = size // 3
+              for y in range(size):
+                  row = b'\x00'
+                  for x in range(size):
+                      dist = ((x-mid)**2 + (y-mid)**2) ** 0.5
+                      row += bytes(fg if dist < r else bg)
+                  rows.append(row)
+              raw = b''.join(rows)
+              return (b'\x89PNG\r\n\x1a\n'
+                  + chunk(b'IHDR', struct.pack('>IIBBBBB', size, size, 8, 6, 0, 0, 0))
+                  + chunk(b'IDAT', zlib.compress(raw))
+                  + chunk(b'IEND', b''))
+
+          for sz in [16, 32, 64, 128, 256, 512, 1024]:
+              with open(f'assets/icon-{sz}.png', 'wb') as f:
+                  f.write(make_png(sz))
+
+          # DMG background (simple dark gradient placeholder)
+          with open('assets/dmg-background.png', 'wb') as f:
+              f.write(make_png(660, bg=(13,13,16,255), fg=(13,13,16,255)))
+
+          print("Icons generated")
+          PYEOF
+
+          ICONSET=assets/icon.iconset
+          mkdir -p "$ICONSET"
+
+          for sz in 16 32 64 128 256 512; do
+            sips -z $sz $sz assets/icon-${sz}.png \
+              --out "$ICONSET/icon_${sz}x${sz}.png" 2>/dev/null || \
+            cp assets/icon-${sz}.png "$ICONSET/icon_${sz}x${sz}.png"
+            dbl=$((sz*2))
+            if [ $dbl -le 1024 ]; then
+              sips -z $dbl $dbl assets/icon-1024.png \
+                --out "$ICONSET/icon_${sz}x${sz}@2x.png" 2>/dev/null || true
+            fi
+          done
+          sips -z 1024 1024 assets/icon-1024.png \
+            --out "$ICONSET/icon_512x512@2x.png" 2>/dev/null || true
+
+          iconutil -c icns "$ICONSET" -o assets/icon.icns
+          echo "icon.icns created: $(ls -lh assets/icon.icns)"
+
+      - name: Build DMG
+        run: npm run build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Find DMG
+        id: dmg
+        run: |
+          DMG=$(find dist -name "*.dmg" | head -1)
+          echo "path=$DMG" >> $GITHUB_OUTPUT
+          echo "Found: $DMG"
+          ls -lh "$DMG"
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwiftClean-macOS-dmg
+          path: ${{ steps.dmg.outputs.path }}
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.dmg.outputs.path }}
+          generate_release_notes: true
+          body: |
+            ## SwiftClean ${{ github.ref_name }}
+
+            ### Install
+            1. Download `SwiftClean-*.dmg` below
+            2. Double-click → drag **SwiftClean** to **Applications**
+            3. Open from Applications — done!
+
+            > **"Unidentified developer" warning?**
+            > Right-click SwiftClean.app → Open → Open. Once only.
+
+            ### Features
+            - 🧹 Deep system cleaner
+            - 🛡 Malware scanner (ClamAV bundled)
+            - ⊘ App uninstaller
+            - ⚡ System optimizer
+            - ◉ Disk analyzer
+            - ⌫ Dev project purger

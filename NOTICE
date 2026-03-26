@@ -1,0 +1,39 @@
+SwiftClean
+Copyright 2025 SwiftClean Contributors
+
+This product includes software developed by third parties:
+
+─────────────────────────────────────────────────────────────────────────────
+ClamAV
+  Website:  https://www.clamav.net/
+  License:  GNU General Public License v2.0
+  Copyright (C) 2007-2024 Cisco Systems, Inc. and/or its affiliates.
+  ClamAV® is a registered trademark of Cisco Systems, Inc.
+
+  SwiftClean bundles ClamAV binaries (clamscan, freshclam) to provide
+  on-device malware scanning without requiring user installation.
+  ClamAV source code is available at: https://github.com/Cisco-Talos/clamav
+
+─────────────────────────────────────────────────────────────────────────────
+Tauri
+  Website:  https://tauri.app/
+  License:  MIT / Apache-2.0
+  Copyright (c) 2019-2024 Tauri Programme within The Commons Conservancy
+
+─────────────────────────────────────────────────────────────────────────────
+Vite
+  Website:  https://vitejs.dev/
+  License:  MIT
+  Copyright (c) 2019-present, VoidZero Inc. and Vite contributors
+
+─────────────────────────────────────────────────────────────────────────────
+Tokio
+  Website:  https://tokio.rs/
+  License:  MIT
+  Copyright (c) 2023 Tokio Contributors
+
+─────────────────────────────────────────────────────────────────────────────
+Serde
+  Website:  https://serde.rs/
+  License:  MIT / Apache-2.0
+  Copyright (c) 2014-2024 David Tolnay and the Serde contributors
