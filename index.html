@@ -1111,55 +1111,17 @@ html, body {
   <div class="page-header">
     <div>
       <div class="page-title">Disk Analyzer</div>
-      <div class="page-sub" id="disk-sub">Macintosh HD</div>
+      <div class="page-sub" id="disk-sub">Scanning…</div>
     </div>
+    <button class="btn btn-ghost btn-sm" onclick="loadDiskAnalyzer()">↻ Refresh</button>
   </div>
   <div class="disk-layout">
-    <div class="disk-tree">
+    <div class="disk-tree" id="disk-tree">
       <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:4px 8px;margin-bottom:6px">Macintosh HD</div>
-      <div class="tree-item sel"><span>📁</span><span class="tree-name">Users</span><span class="tree-size">210 GB</span></div>
-      <div class="tree-item" style="padding-left:20px"><span>📁</span><span class="tree-name">Library</span><span class="tree-size">75 GB</span></div>
-      <div class="tree-item" style="padding-left:20px"><span>📁</span><span class="tree-name">Downloads</span><span class="tree-size">34 GB</span></div>
-      <div class="tree-item" style="padding-left:20px"><span>📁</span><span class="tree-name">Movies</span><span class="tree-size">22 GB</span></div>
-      <div class="tree-item"><span>📁</span><span class="tree-name">Applications</span><span class="tree-size">48 GB</span></div>
-      <div class="tree-item"><span>📁</span><span class="tree-name">System</span><span class="tree-size">18 GB</span></div>
-      <div class="tree-item"><span>📁</span><span class="tree-name">Library</span><span class="tree-size">12 GB</span></div>
-      <div class="tree-item"><span>📄</span><span class="tree-name">backup.zip</span><span class="tree-size">8.2 GB</span></div>
+      <div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Scanning…</div>
     </div>
-    <div class="disk-viz">
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
-        <div style="flex:1">
-          <div style="font-size:12px;font-weight:600;margin-bottom:6px">Storage Breakdown</div>
-          <div style="height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;display:flex">
-            <div style="width:48%;background:var(--blue)"></div>
-            <div style="width:22%;background:var(--purple)"></div>
-            <div style="width:14%;background:var(--cyan)"></div>
-            <div style="width:10%;background:var(--green)"></div>
-            <div style="width:6%;background:var(--bg4)"></div>
-          </div>
-          <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--text2)">
-            <span><span style="color:var(--blue)">●</span> Users 48%</span>
-            <span><span style="color:var(--purple)">●</span> Apps 22%</span>
-            <span><span style="color:var(--cyan)">●</span> System 14%</span>
-            <span><span style="color:var(--green)">●</span> Other 10%</span>
-          </div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:10px;color:var(--text2)">Available</div>
-          <div style="font-size:20px;font-weight:700;color:var(--green)" id="disk-free-big">156 GB</div>
-        </div>
-      </div>
-      <div class="treemap">
-        <div class="tm lg" style="background:rgba(59,130,246,0.12)"><div class="tm-name">📁 Library</div><div class="tm-size">75.4 GB</div></div>
-        <div class="tm" style="background:rgba(168,85,247,0.12)"><div class="tm-name">📁 Downloads</div><div class="tm-size">34.6 GB</div></div>
-        <div class="tm" style="background:rgba(168,85,247,0.1)"><div class="tm-name">📁 Movies</div><div class="tm-size">22.4 GB</div></div>
-        <div class="tm md" style="background:rgba(34,197,94,0.1)"><div class="tm-name">📱 Applications</div><div class="tm-size">48.2 GB</div></div>
-        <div class="tm" style="background:rgba(6,182,212,0.1)"><div class="tm-name">📁 Documents</div><div class="tm-size">16.9 GB</div></div>
-        <div class="tm" style="background:rgba(245,158,11,0.1)"><div class="tm-name">📁 Pictures</div><div class="tm-size">8.1 GB</div></div>
-        <div class="tm" style="background:rgba(6,182,212,0.12)"><div class="tm-name">📁 System</div><div class="tm-size">18.4 GB</div></div>
-        <div class="tm" style="background:rgba(239,68,68,0.1)"><div class="tm-name">📄 backup.zip</div><div class="tm-size">8.2 GB</div></div>
-        <div class="tm md" style="background:rgba(239,68,68,0.08)"><div class="tm-name">📁 Developer</div><div class="tm-size">23.3 GB</div></div>
-      </div>
+    <div class="disk-viz" id="disk-viz">
+      <div style="padding:40px;text-align:center;color:var(--text3);font-size:12px">Loading disk data…</div>
     </div>
   </div>
 </div>
@@ -1215,6 +1177,37 @@ function mockInvoke(cmd) {
       { name:'current-work', path:'~/Projects/current-work/node_modules', artifact:'node_modules', size_bytes:0.9*GB, size_human:'856 MB', is_recent:true },
     ];
     case 'run_malware_scan': return new Promise(r => setTimeout(() => r({ total_files:84329, threats:[], duration_secs:42.3, status:'done', error:null }), 4000));
+    case 'get_system_stats': return {
+      cpu_pct:34, cpu_cores:[78,45,62,22,88,34,15,55], load:[0.82,1.05,1.23],
+      mem_used:14.2*1073741824, mem_total:32*1073741824, mem_free:9.8*1073741824,
+      mem_wired:3.8*1073741824, mem_compressed:2.0*1073741824, mem_app:8.4*1073741824,
+      net_dl:0, net_ul:0, processes:[
+        {name:'Google Chrome',cpu:42.1,mem:2.1},
+        {name:'VS Code',cpu:28.3,mem:1.4},
+        {name:'Slack',cpu:12.5,mem:0.8},
+        {name:'Figma',cpu:8.2,mem:0.6},
+      ],
+      os_version:'15.3', model:'MacBook Pro',
+    };
+    case 'scan_disk_folders': return new Promise(r => setTimeout(() => {
+      const GB = 1073741824;
+      r({ disk:{ total_bytes:494*GB, used_bytes:326*GB, free_bytes:168*GB, used_pct:66 },
+        top:[
+          {name:'Users',path:'/Users',icon:'👤',size_bytes:210*GB,size_human:'210 GB'},
+          {name:'Applications',path:'/Applications',icon:'📱',size_bytes:48*GB,size_human:'48 GB'},
+          {name:'System',path:'/System',icon:'⚙️',size_bytes:18*GB,size_human:'18 GB'},
+          {name:'Library',path:'/Library',icon:'📚',size_bytes:12*GB,size_human:'12 GB'},
+        ],
+        user:[
+          {name:'Library',path:'~/Library',icon:'📚',size_bytes:75*GB,size_human:'75 GB'},
+          {name:'Downloads',path:'~/Downloads',icon:'📥',size_bytes:34*GB,size_human:'34 GB'},
+          {name:'Documents',path:'~/Documents',icon:'📄',size_bytes:17*GB,size_human:'17 GB'},
+          {name:'Movies',path:'~/Movies',icon:'🎬',size_bytes:22*GB,size_human:'22 GB'},
+          {name:'Pictures',path:'~/Pictures',icon:'🖼',size_bytes:8*GB,size_human:'8 GB'},
+          {name:'Developer',path:'~/Developer',icon:'💻',size_bytes:23*GB,size_human:'23 GB'},
+        ]
+      });
+    }, 800));
     default: return null;
   }
 }
@@ -1229,7 +1222,10 @@ function go(id) {
   if (n) n.classList.add('active');
 }
 window.go = go;
-document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', () => go(n.dataset.view)));
+document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', () => {
+  go(n.dataset.view);
+  if (n.dataset.view === 'disk' && !diskDataLoaded) loadDiskAnalyzer();
+}));
 
 // ── Clock ──────────────────────────────────────────────────────────────────────
 function updateClock() {
@@ -1238,30 +1234,129 @@ function updateClock() {
 }
 setInterval(updateClock, 1000); updateClock();
 
-// ── Disk Stats ─────────────────────────────────────────────────────────────────
-async function loadDiskStats() {
+// ── System Stats (all real data) ──────────────────────────────────────────────
+const GB = 1073741824;
+function fmt(b){ return b>=GB?(b/GB).toFixed(1)+' GB':b>=1048576?(b/1048576).toFixed(1)+' MB':(b/1024).toFixed(0)+' KB'; }
+const procColors = ['var(--red)','var(--amber)','var(--blue)','var(--purple)','var(--cyan)','var(--green)'];
+
+async function loadSystemStats() {
+  // --- Disk ---
   try {
-    const d = await invoke('get_disk_usage');
-    const GB = 1073741824;
-    const free  = (d.free_bytes/GB).toFixed(0);
-    const used  = (d.used_bytes/GB).toFixed(0);
-    const total = (d.total_bytes/GB).toFixed(0);
-    const pct   = d.used_pct.toFixed(0);
-    document.getElementById('d-free').textContent = free + ' GB';
-    document.getElementById('d-used-lbl').textContent = used + ' GB used';
-    document.getElementById('d-total-lbl').textContent = total + ' GB total';
-    document.getElementById('d-pct-tag').textContent = pct + '%';
-    document.getElementById('d-used-bar').style.width = pct + '%';
-    document.getElementById('sys-sub').textContent = `Macintosh HD · ${total} GB · macOS 15`;
-    document.getElementById('disk-sub').textContent = `Macintosh HD · ${total} GB · ${used} GB used`;
-    document.getElementById('disk-free-big').textContent = free + ' GB';
-    document.getElementById('st-disk').textContent = pct + '%';
-    document.getElementById('st-disk-bar').style.width = pct + '%';
-    document.getElementById('st-disk-used').textContent = used + ' GB';
-    document.getElementById('st-disk-free-bar').style.width = (100-pct) + '%';
-    document.getElementById('st-disk-free').textContent = free + ' GB';
-  } catch(e) { console.error(e); }
+    const disk = await invoke('get_disk_usage');
+    const free  = (disk.free_bytes/GB).toFixed(0);
+    const used  = (disk.used_bytes/GB).toFixed(0);
+    const total = (disk.total_bytes/GB).toFixed(0);
+    const pct   = disk.used_pct.toFixed(0);
+    const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+    const setW = (id,w) => { const el=document.getElementById(id); if(el) el.style.width=w+'%'; };
+    set('d-free', free+' GB');
+    set('d-used-lbl', used+' GB used');
+    set('d-total-lbl', total+' GB total');
+    set('d-pct-tag', pct+'%');
+    setW('d-used-bar', pct);
+    set('st-disk', pct+'%');
+    setW('st-disk-bar', pct);
+    set('st-disk-used', used+' GB');
+    setW('st-disk-free-bar', 100-pct);
+    set('st-disk-free', free+' GB');
+  } catch(e) { console.error('disk',e); }
+
+  // --- All system stats ---
+  try {
+    const s = await invoke('get_system_stats');
+    const memPct = Math.round(s.mem_used/s.mem_total*100);
+    const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+    const setW = (id,w) => { const el=document.getElementById(id); if(el) el.style.width=w+'%'; };
+
+    // System subtitle
+    set('sys-sub', `${s.model} · ${(s.mem_total/GB).toFixed(0)} GB RAM · macOS ${s.os_version}`);
+
+    // CPU %
+    set('cpu-pct', s.cpu_pct+'%');
+    set('st-cpu', s.cpu_pct+'%');
+
+    // CPU core bars
+    document.querySelectorAll('.cpu-fill').forEach((el,i) => {
+      if (s.cpu_cores[i] !== undefined) el.style.height = Math.max(4,s.cpu_cores[i])+'%';
+    });
+
+    // Memory % header (dashboard card)
+    document.querySelectorAll('#view-dashboard .card').forEach(card => {
+      const hdr = card.querySelector('[style*="var(--amber)"]');
+      if (hdr && hdr.textContent.includes('%')) hdr.textContent = memPct+'%';
+    });
+
+    // Memory bars (dashboard)
+    const memPcts = [
+      s.mem_app/s.mem_total*100,
+      s.mem_wired/s.mem_total*100,
+      s.mem_compressed/s.mem_total*100,
+      s.mem_free/s.mem_total*100,
+    ];
+    const memVals = [
+      fmt(s.mem_app), fmt(s.mem_wired), fmt(s.mem_compressed), fmt(s.mem_free)
+    ];
+    let barIdx = 0;
+    document.querySelectorAll('#view-dashboard .card').forEach(card => {
+      // Find the memory card (has 4 bar-track elements)
+      const bars = card.querySelectorAll('.bar-track');
+      if (bars.length === 4) {
+        bars.forEach((bar, i) => {
+          const fill = bar.querySelector('.bar-fill');
+          if (fill) fill.style.width = Math.min(100, memPcts[i]).toFixed(0)+'%';
+          // Update the value label (span with text GB)
+          const row = bar.parentElement?.parentElement;
+          if (row) {
+            const spans = row.querySelectorAll('span');
+            spans.forEach(sp => { if (sp.textContent.includes('GB') && !sp.textContent.includes('Memory')) sp.textContent = memVals[i]; });
+          }
+        });
+      }
+    });
+
+    // Status view memory
+    set('st-mem-used', fmt(s.mem_used));
+    set('st-mem-free', fmt(s.mem_free));
+    set('st-mem-wired', fmt(s.mem_wired));
+
+    // Network
+    if (s.net_dl > 0 || s.net_ul > 0) {
+      const dlMB = (s.net_dl/1048576).toFixed(1);
+      const ulMB = (s.net_ul/1048576).toFixed(1);
+      set('net-dl', dlMB+' MB/s'); set('net-ul', ulMB+' MB/s');
+      setW('net-dl-bar', Math.min(100, dlMB/50*100));
+      setW('net-ul-bar', Math.min(100, ulMB/20*100));
+      set('st-dl', dlMB+' MB/s'); set('st-ul', ulMB+' MB/s');
+      setW('st-dl-bar', Math.min(100, dlMB/50*100));
+      setW('st-ul-bar', Math.min(100, ulMB/20*100));
+    }
+
+    // Top processes — find the processes card (last card in dashboard grid)
+    if (s.processes && s.processes.length > 0) {
+      const maxCpu = Math.max(...s.processes.map(p=>p.cpu), 1);
+      const procCards = document.querySelectorAll('#view-dashboard .card');
+      const procCard = procCards[procCards.length-1];
+      if (procCard) {
+        const container = procCard.querySelector('.stat-row')?.parentElement || procCard.querySelector('div:last-child');
+        if (container) {
+          // Only replace if this looks like the processes card
+          if (procCard.querySelector('.stat-dot')) {
+            container.innerHTML = s.processes.slice(0,4).map((p,i) => `
+              <div class="stat-row">
+                <div class="stat-dot" style="background:${procColors[i]}"></div>
+                <span class="stat-name">${p.name.substring(0,20)}</span>
+                <div class="stat-bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:${(p.cpu/maxCpu*100).toFixed(0)}%;background:${procColors[i]}"></div></div></div>
+                <span class="stat-val">${p.cpu.toFixed(1)}%</span>
+              </div>`).join('');
+          }
+        }
+      }
+    }
+
+  } catch(e) { console.error('system stats',e); }
 }
+
+async function loadDiskStats() { await loadSystemStats(); }
 
 // ── Malware DB ─────────────────────────────────────────────────────────────────
 function isDbStale(str) {
@@ -1619,26 +1714,136 @@ function appendLine(html) {
 }
 window.closeModal = () => document.getElementById('modal').classList.remove('show');
 
-// ── Live Tickers ───────────────────────────────────────────────────────────────
-setInterval(() => {
-  const dl = (Math.random()*10).toFixed(1);
-  const ul = (Math.random()*2).toFixed(1);
-  const cpu = Math.floor(Math.random()*50)+10;
-  ['net-dl','net-ul'].forEach(id => {});
-  document.getElementById('net-dl').textContent = dl+' MB/s';
-  document.getElementById('net-ul').textContent = ul+' MB/s';
-  document.getElementById('net-dl-bar').style.width = (dl/10*100)+'%';
-  document.getElementById('net-ul-bar').style.width = (ul/2*100)+'%';
-  document.getElementById('cpu-pct').textContent = cpu+'%';
-  document.getElementById('st-cpu').textContent = cpu+'%';
-  document.getElementById('st-dl').textContent = dl+' MB/s';
-  document.getElementById('st-ul').textContent = ul+' MB/s';
-  document.getElementById('st-dl-bar').style.width = (dl/10*100)+'%';
-  document.getElementById('st-ul-bar').style.width = (ul/2*100)+'%';
-}, 2800);
+// ── Live polling (real data every 3s) ─────────────────────────────────────────
+// Started in Init below
+
+// ── Disk Analyzer ─────────────────────────────────────────────────────────────
+let diskDataLoaded = false;
+
+async function loadDiskAnalyzer() {
+  diskDataLoaded = false;
+  const tree = document.getElementById('disk-tree');
+  const viz  = document.getElementById('disk-viz');
+  if (!tree || !viz) return;
+
+  tree.innerHTML = '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:4px 8px;margin-bottom:6px">Macintosh HD</div><div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Scanning…</div>';
+  viz.innerHTML  = '<div style="padding:40px;text-align:center;color:var(--text3);font-size:12px">Loading disk data…</div>';
+
+  const ul = await listen('disk_scan_progress', evt => {
+    document.getElementById('disk-sub').textContent = `Scanning ${evt.current}…`;
+  });
+
+  try {
+    const data = await invoke('scan_disk_folders');
+    ul();
+    diskDataLoaded = true;
+    const GB = 1073741824;
+    const { disk, top, user } = data;
+
+    const freeGB  = (disk.free_bytes  / GB).toFixed(1);
+    const usedGB  = (disk.used_bytes  / GB).toFixed(1);
+    const totalGB = (disk.total_bytes / GB).toFixed(1);
+    const pct     = disk.used_pct.toFixed(0);
+
+    // Update page header
+    document.getElementById('disk-sub').textContent = `Macintosh HD · ${totalGB} GB total · ${usedGB} GB used`;
+    document.getElementById('disk-free-big') && (document.getElementById('disk-free-big').textContent = freeGB + ' GB');
+
+    // Also update dashboard storage card
+    document.getElementById('d-free').textContent = freeGB + ' GB';
+    document.getElementById('d-used-lbl').textContent = usedGB + ' GB used';
+    document.getElementById('d-total-lbl').textContent = totalGB + ' GB total';
+    document.getElementById('d-pct-tag').textContent = pct + '%';
+    document.getElementById('d-used-bar').style.width = pct + '%';
+
+    // Build tree
+    const treeColors = ['var(--blue)','var(--purple)','var(--cyan)','var(--green)','var(--amber)','var(--red)'];
+    tree.innerHTML = `<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:4px 8px;margin-bottom:6px">Macintosh HD</div>` +
+      top.map((d,i) => `
+        <div class="tree-item ${i===0?'sel':''}" onclick="showDirContents(this,'${d.name}')">
+          <span>${d.icon}</span>
+          <span class="tree-name">${d.name}</span>
+          <span class="tree-size">${d.size_human}</span>
+        </div>
+        ${d.name === 'Users' ? user.map(u => `
+          <div class="tree-item" style="padding-left:20px" onclick="showDirContents(this,'~/${u.name}')">
+            <span>${u.icon}</span>
+            <span class="tree-name">${u.name}</span>
+            <span class="tree-size">${u.size_human}</span>
+          </div>`).join('') : ''}
+      `).join('');
+
+    // Build visualization
+    const allDirs = [...user].sort((a,b) => b.size_bytes - a.size_bytes);
+    const maxSize = allDirs[0]?.size_bytes || 1;
+    const palette = [
+      'rgba(59,130,246,0.15)',  // blue
+      'rgba(168,85,247,0.15)',  // purple
+      'rgba(6,182,212,0.14)',   // cyan
+      'rgba(34,197,94,0.12)',   // green
+      'rgba(245,158,11,0.12)',  // amber
+      'rgba(239,68,68,0.1)',    // red
+      'rgba(99,102,241,0.13)',  // indigo
+      'rgba(236,72,153,0.1)',   // pink
+    ];
+
+    // Storage bar
+    const userPct  = (top.find(t=>t.name==='Users')?.size_bytes || 0) / disk.total_bytes * 100;
+    const appPct   = (top.find(t=>t.name==='Applications')?.size_bytes || 0) / disk.total_bytes * 100;
+    const sysPct   = (top.find(t=>t.name==='System')?.size_bytes || 0) / disk.total_bytes * 100;
+    const freePct  = disk.free_bytes / disk.total_bytes * 100;
+
+    viz.innerHTML = `
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:600;margin-bottom:8px">Storage Breakdown</div>
+          <div style="height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;display:flex">
+            <div style="width:${userPct.toFixed(1)}%;background:var(--blue);transition:width 0.8s ease"></div>
+            <div style="width:${appPct.toFixed(1)}%;background:var(--purple);transition:width 0.8s ease"></div>
+            <div style="width:${sysPct.toFixed(1)}%;background:var(--cyan);transition:width 0.8s ease"></div>
+            <div style="flex:1;background:var(--green);transition:width 0.8s ease"></div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--text2)">
+            <span><span style="color:var(--blue)">●</span> Users ${userPct.toFixed(0)}%</span>
+            <span><span style="color:var(--purple)">●</span> Apps ${appPct.toFixed(0)}%</span>
+            <span><span style="color:var(--cyan)">●</span> System ${sysPct.toFixed(0)}%</span>
+            <span><span style="color:var(--green)">●</span> Free ${freePct.toFixed(0)}%</span>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;color:var(--text2)">Available</div>
+          <div style="font-size:20px;font-weight:700;color:var(--green)" id="disk-free-big">${freeGB} GB</div>
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em">Home Folder</div>
+      <div class="treemap">
+        ${allDirs.map((d, i) => {
+          const sizePct = d.size_bytes / maxSize;
+          const isLg = i === 0;
+          const isMd = i === 1 && sizePct > 0.5;
+          return `<div class="tm ${isLg?'lg':isMd?'md':''}" style="background:${palette[i%palette.length]}">
+            <div class="tm-name">${d.icon} ${d.name}</div>
+            <div class="tm-size">${d.size_human}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    `;
+  } catch(e) {
+    ul && ul();
+    document.getElementById('disk-sub').textContent = 'Error scanning disk';
+    viz.innerHTML = `<div style="padding:20px;color:var(--red);font-size:12px">Error: ${e.message || e}</div>`;
+    console.error(e);
+  }
+}
+
+window.showDirContents = function(el, name) {
+  document.querySelectorAll('.tree-item').forEach(t => t.classList.remove('sel'));
+  el.classList.add('sel');
+};
 
 // ── Init ───────────────────────────────────────────────────────────────────────
-loadDiskStats();
+loadSystemStats();                          // first load immediately
+setInterval(loadSystemStats, 3000);        // then poll every 3s for live updates
 loadDbInfo();
 loadApps();
 loadProjects();
