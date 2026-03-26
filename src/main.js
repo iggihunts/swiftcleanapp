@@ -126,7 +126,7 @@ ipcMain.handle('get_system_stats', async () => {
   // OS version & model
   try {
     stats.os_version = (await runCmd('sw_vers -productVersion')).trim();
-    const model = await runCmd('system_profiler SPHardwareDataType 2>/dev/null | grep "Model Name" | awk -F": " '{print $2}'').catch(() => '');
+    const model = await runCmd('system_profiler SPHardwareDataType 2>/dev/null | grep "Model Name" | cut -d: -f2 | xargs').catch(() => '');
     stats.model = model.trim() || 'Mac';
   } catch(e) {}
 
