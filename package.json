@@ -10,7 +10,6 @@
     "start": "electron .",
     "dev": "electron . --dev",
     "build": "electron-builder --mac --publish never",
-    "build:dmg": "electron-builder --mac dmg --publish never",
     "postinstall": "electron-builder install-app-deps"
   },
   "devDependencies": {
@@ -31,21 +30,7 @@
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "assets/entitlements.plist",
-      "entitlementsInherit": "assets/entitlements.plist",
-      "extendInfo": {
-        "NSAppleEventsUsageDescription": "SwiftClean needs automation access to restart Finder and Dock.",
-        "NSDesktopFolderUsageDescription": "SwiftClean needs access to scan and clean files on your desktop.",
-        "NSDocumentsFolderUsageDescription": "SwiftClean needs access to scan files in Documents.",
-        "NSDownloadsFolderUsageDescription": "SwiftClean needs access to scan files in Downloads."
-      }
-    },
-    "dmg": {
-      "title": "SwiftClean",
-      "window": { "width": 660, "height": 400 },
-      "contents": [
-        { "x": 180, "y": 190, "type": "file" },
-        { "x": 480, "y": 190, "type": "link", "path": "/Applications" }
-      ]
+      "entitlementsInherit": "assets/entitlements.plist"
     },
     "files": [
       "src/**/*",
